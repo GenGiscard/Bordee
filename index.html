@@ -471,18 +471,18 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 }
 
 /* ----- énergie, abordage, équipement ----- */
-.pwr{position:absolute;left:0;bottom:0;background:rgba(8,16,26,.86);border:1px solid rgba(224,176,79,.35);padding:6px 8px;display:flex;flex-direction:column;gap:5px}
+.pwr{position:relative;flex:none;background:rgba(8,16,26,.86);border:1px solid rgba(224,176,79,.35);padding:6px 8px;display:flex;flex-direction:column;gap:5px}
 .reac{display:flex;align-items:center;gap:6px;font-size:13px}
 .reac b{color:var(--gold)}.reac small{color:var(--mut)}
 .rp{display:flex;gap:2px}.rp i{width:7px;height:10px;background:#0009;border:1px solid #fff2}.rp i.f{background:#e0b04f;border-color:#e0b04f}
-.sysrow{display:flex;gap:6px}
-.sysc{display:flex;flex-direction:column;align-items:center;gap:2px;width:38px}
+.sysrow{display:flex;gap:3px;justify-content:space-between}
+.sysc{display:flex;flex-direction:column;align-items:center;gap:2px;width:34px}
 .sysc .bars{display:flex;flex-direction:column;gap:2px}
-.sysc .bars i{width:22px;height:6px;background:#0009;border:1px solid rgba(143,211,107,.35)}
+.sysc .bars i{width:20px;height:6px;background:#0009;border:1px solid rgba(143,211,107,.35)}
 .sysc .bars i.on{background:var(--good);border-color:var(--good)}
 .sysc .bars i.br{background:var(--blood);border-color:var(--blood)}
 .sysc .bars i.idle{outline:1px dashed #ffd166}
-.pb{width:24px;height:18px;padding:0;line-height:16px;font-weight:800;font-size:14px;background:#0b1520;border:1px solid rgba(224,176,79,.4)}
+.pb{width:26px;height:20px;padding:0;line-height:16px;font-weight:800;font-size:14px;background:#0b1520;border:1px solid rgba(224,176,79,.4)}
 .pb:hover{border-color:var(--gold)}
 .sysn{font-size:11px;color:var(--mut)}
 .selcard{left:auto!important;right:0}
@@ -513,9 +513,24 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .yrow{display:flex;justify-content:space-between;align-items:center;background:var(--glass2);padding:5px 8px}
 .yrow span{display:flex;flex-direction:column}.yrow small{color:var(--mut);font-size:12px}
 @media (max-width:760px){
-  .pwr{transform:scale(.82);transform-origin:left bottom}
+  .pwr{flex:none}
   .chest{display:none}
 }
+
+/* ----- tutoriel ----- */
+#coach{position:fixed;left:50%;top:86px;transform:translateX(-50%);z-index:12;width:min(460px,calc(100vw - 20px));background:rgba(8,16,26,.96);border:2px solid var(--gold);padding:10px 14px 12px;display:none;box-shadow:0 10px 30px #000c}
+#coach.on{display:block}
+.cprog{height:4px;background:#0009;margin:-10px -14px 8px}.cprog i{display:block;height:100%;background:var(--gold)}
+.chd{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--mut)}
+.ct{display:block;font-family:var(--disp);font-weight:400;font-size:26px;color:var(--gold);margin:2px 0}
+#coach p{margin:2px 0 8px;font-size:16px;line-height:1.35}
+.cbtns{display:flex;gap:8px}
+.coach-hl{outline:3px solid #ffd166!important;outline-offset:2px;box-shadow:0 0 16px rgba(255,209,102,.8)!important;animation:hlp 1s infinite alternate}
+@keyframes hlp{from{outline-color:rgba(255,209,102,.45)}to{outline-color:#ffd166}}
+.tutobox{display:flex;gap:14px;align-items:center;justify-content:space-between;background:linear-gradient(90deg,rgba(224,176,79,.18),transparent);border:1px solid var(--gold);padding:12px;margin-bottom:12px;flex-wrap:wrap}
+.tutobox div{display:flex;flex-direction:column;gap:3px;flex:1 1 260px}
+.tutobox b{font-size:20px;color:var(--gold)}.tutobox span{color:var(--mut)}
+@media (max-width:760px){#coach{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px))}.ct{font-size:21px}#coach p{font-size:14px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -533,6 +548,7 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 <div id="banner"></div>
 <div id="tip"></div>
 <div id="ghost"></div>
+<div id="coach" role="status" aria-live="polite"></div>
 <div id="menu"></div>
 <div id="screen"></div>
 <div id="modal"></div>
@@ -566,7 +582,7 @@ const SHIPS={
   colosse:{n:'Le Colosse',cls:'Vaisseau de ligne',cols:10,hull:40,reactor:8,sys:{voilure:2,charpenterie:4,batterie:3,infirmerie:2,grappins:1},ladders:[1,8],
     rt:{barre:[[0,0],[1,0]],voilure:[[2,0],[3,0],[4,0],[5,0],[6,0],[7,0]],infirmerie:[[8,0],[9,0]],charpenterie:[[0,1],[1,1],[2,1],[3,1],[4,1]],batterie:[[5,1],[6,1],[7,1],[8,1],[9,1]]},
     base:{barre:0,voilure:1,charpenterie:1,batterie:2,infirmerie:1},eva:-.05,speed:.85,hp:1,layer:1,crit:0,gold:0,
-    arms:['couleuv','canon12'],masts:[[.1,130],[.4,185],[.72,165]],perk:'Coque épaisse : 40 de coque, bastingage niveau 4 et une couche en plus, mais lourd.',st:[5,1,3,2]},
+    arms:['couleuv','canon12'],masts:[[.1,130],[.4,185],[.72,165]],perk:'Coque épaisse : 40 de coque, pavois niveau 4 et une couche en plus, mais lourd.',st:[5,1,3,2]},
   requin:{n:'Le Requin',cls:'Brick corsaire',cols:6,hull:26,reactor:7,sys:{voilure:2,charpenterie:2,batterie:3,infirmerie:1,grappins:2},ladders:[1,4],
     rt:{barre:[[0,0],[1,0]],voilure:[[2,0],[3,0],[4,0],[5,0]],infirmerie:[[0,1],[1,1]],batterie:[[2,1],[3,1]],charpenterie:[[4,1],[5,1]]},
     base:{barre:0,voilure:1,charpenterie:1,batterie:2,infirmerie:1},eva:0,speed:1.3,hp:1.3,layer:0,crit:.1,gold:0,
@@ -645,7 +661,7 @@ const WEAPONS={
 const TGT_ORDER=['auto','barre','voilure','charpenterie','batterie','infirmerie'];
 const TGT_N={auto:'Au hasard',barre:'Barre',voilure:'Voilure',charpenterie:'Charpenterie',batterie:'Batterie',infirmerie:'Infirmerie'};
 function defTarget(k){return WEAPONS[k].type==='chain'?'voilure':'auto';}
-const WTYPE={ball:'Boulet classique',mortar:'Ignore le bordage',chain:'Double dégâts aux systèmes',hot:'Déclenche un incendie',grape:'Blesse lourdement l\u2019équipage'};
+const WTYPE={ball:'Boulet classique',mortar:'Tir plongeant, passe au-dessus du pavois',chain:'Double dégâts aux systèmes',hot:'Déclenche un incendie',grape:'Blesse lourdement l\u2019équipage'};
 const ODDS={3:[75,25,0],4:[55,40,5],5:[40,45,15],6:[30,45,25],7:[20,40,40],8:[15,35,50]};
 const XPN={3:6,4:10,5:18,6:28,7:44};
 const PVE=[1,2,8,14,20,26,32];
@@ -656,7 +672,7 @@ const AUGS={
   interets:{n:'Intérêts composés',d:'Les intérêts peuvent monter jusqu\u2019à 8 or par manche.'},
   recrues:{n:'Recrues fraîches',d:'Deux marins de rang 2 rejoignent ton banc.'},
   cuivre:{n:'Doublage de cuivre',d:'+10 de coque.'},
-  bordage:{n:'Bordage renforcé',d:'+1 couche de bordage.'},
+  bordage:{n:'Écu ferré',d:'+1 couche de pavois.'},
   poudre:{n:'Poudre fine',d:'Tes armes rechargent 15 % plus vite.'},
   braise:{n:'Boulets chauffés',d:'Chaque coup au but a 15 % de chances d\u2019allumer un incendie.'},
   chirurgie:{n:'Chirurgien de marine',d:'Soins doublés à l\u2019infirmerie, marins +20 % PV.'},
@@ -865,8 +881,8 @@ function synFx(c){
 
 /* ================= énergie : matelots et systèmes ================= */
 const SYS=['voilure','charpenterie','batterie','infirmerie','grappins'];
-const SYSN={voilure:'Voilure',charpenterie:'Bastingage',batterie:'Batterie',infirmerie:'Infirmerie',grappins:'Grappins'};
-const SYSS={voilure:'Voiles',charpenterie:'Bastin.',batterie:'Batt.',infirmerie:'Infirm.',grappins:'Grapp.'};
+const SYSN={voilure:'Voilure',charpenterie:'Pavois',batterie:'Batterie',infirmerie:'Infirmerie',grappins:'Grappins'};
+const SYSS={voilure:'Voiles',charpenterie:'Pavois',batterie:'Batt.',infirmerie:'Infirm.',grappins:'Grapp.'};
 const SYSCAP={voilure:6,charpenterie:8,batterie:8,infirmerie:3,grappins:2};
 function sysMax(L,ups){const m={};for(const k of SYS)m[k]=Math.min(SYSCAP[k],L.sys[k]+((ups||{})[k]||0));return m;}
 function autoAlloc(max,reactor,weapons){
@@ -1043,7 +1059,12 @@ function aiBoarding(Bt,owner){
 function makeBattle(a,b,visual){return{A:makeShip(a,0),Bs:makeShip(b,1),t:0,proj:[],ft:[],parts:[],ropes:[],over:false,winA:null,visual,aiT:0,speed:2,doneT:0,fightT:0};}
 function stepShip(Bt,s,o,h){
   const mx=shieldMax(s);if(s.layers>mx)s.layers=mx;
-  if(s.layers<mx){s.shT+=h*(1+.2*manning(s,'charpenterie'))*s.fx.shieldRegen;if(s.shT>=3){s.layers++;s.shT=0;}}else s.shT=0;
+  const mn=manning(s,'charpenterie');
+  if(s.layers<mx&&mn>0){
+    const rep=ownHere(s,'charpenterie').reduce((a,c)=>Math.max(a,c.rep),1);
+    s.shT+=h*(.6+.25*mn)*rep*s.fx.shieldRegen;
+    if(s.shT>=3){s.layers++;s.shT=0;if(Bt.visual)ftext(Bt,shieldPos(s),s.layers===mx?'Pavois remis à neuf':'Pavois consolidé','#e8d7a6');}
+  }else if(s.layers>=mx)s.shT=0;
   if(s.shPulse>0)s.shPulse-=h;
   if(avail(s,'grappins')>0&&s.grap<1)s.grap=Math.min(1,s.grap+h*(avail(s,'grappins')>=2?1/15:1/24));
   moveCrew(s,h);
@@ -1084,14 +1105,16 @@ function fire(Bt,s,o,w){
     Bt.proj.push({s,o,k,wi:s.weapons.indexOf(w),room,tile:{c:tl[0],r:tl[1]},delay:i*.2,t:0,dur:W.type==='mortar'?1.15:.75,fired:false});
   }
 }
+function shieldPos(s){const g=geoOf(s);return{x:lx(g,s.L.cols*T+(s.L.pavX||10)),y:g.gy+g.bob+(s.L.pavY||32),dir:g.mirror?-1:1};}
 function shieldGeo(s){const g=geoOf(s);return{cx:g.gx+s.L.cols*T/2,cy:g.gy+g.bob+T*.7,rx:s.L.cols*T/2+46,ry:T*1.9};}
 function resolve(Bt,p){
   const o=p.o,s=p.s,W=WEAPONS[p.k],pos=Bt.visual?tileXY(o,p.tile.c,p.tile.r):null;
   if(Math.random()<eva(o)){if(pos){ftext(Bt,pos,'Manqué','#ffffff');splash(Bt,o,pos.x);}return;}
   if(W.type!=='mortar'&&o.layers>0){
-    o.layers--;o.shT=0;o.shPulse=.45;
-    if(pos){const sg=shieldGeo(o),m=muzzleXY(s,p.wi),a=Math.atan2((m.y-sg.cy)/sg.ry,(m.x-sg.cx)/sg.rx);o.shAng=a;
-      const hp={x:sg.cx+Math.cos(a)*sg.rx,y:sg.cy+Math.sin(a)*sg.ry};ftext(Bt,hp,'Bastingage','#e8c38a');burst(Bt,hp,'#c89b5a',10);}
+    o.layers--;o.shPulse=.45;
+    if(pos){const hp=shieldPos(o);
+      if(o.layers<=0){ftext(Bt,hp,'Pavois brisé !','#ff9d7a');burst(Bt,hp,'#c89b5a',22);for(let i=0;i<8;i++)Bt.parts.push({x:hp.x,y:hp.y,vx:(Math.random()-.5)*90,vy:-40-Math.random()*60,life:.9,max:.9,col:'200,170,90',r:2.4,grav:true});}
+      else{ftext(Bt,hp,'Pavois touché','#e8c38a');burst(Bt,hp,'#c89b5a',10);}}
     return;
   }
   let d=W.dmg,crit=false;
@@ -1126,7 +1149,7 @@ function stepBattle(Bt,h){
   Bt.proj=Bt.proj.filter(p=>!p.done);
   const a=Bt.A.hull,b=Bt.Bs.hull,ca=aliveCount(Bt.A),cb=aliveCount(Bt.Bs);
   const deadA=Bt.A.startCrew>0&&ca===0,deadB=Bt.Bs.startCrew>0&&cb===0;
-  if(b<=0||a<=0||deadA||deadB||Bt.t>=60){
+  if(b<=0||a<=0||deadA||deadB||(Bt.t>=60&&!Bt.tuto)){
     Bt.over=true;
     Bt.winA=b<=0||deadB?true:a<=0||deadA?false:(a/Bt.A.hullMax>=b/Bt.Bs.hullMax);
     Bt.how=deadB||deadA?'crew':'hull';
@@ -1207,7 +1230,8 @@ function startRound(){
     }
   }
   B=makeBattle(humanBoard(),opp,true);
-  B.kind=kind;B.selW=null;B.intro=1.5;B.speed=OPT.speed;B.manualA=true;B.selC=[];B.hold=false;B.marks=[];
+  if(G.tuto){B.tuto=true;B.Bs.hull=B.Bs.hullMax=22;for(const w of B.Bs.weapons)w.armed=false;B.speed=1;}
+  B.kind=kind;B.selW=null;B.intro=1.5;B.speed=OPT.speed;B.manualA=true;if(G.tuto)B.speed=1;B.selC=[];B.hold=false;B.marks=[];
   G.phase='battle';
   render();
   showVs();
@@ -1227,6 +1251,7 @@ function humanBattleOver(){
   showResult(win,win?0:res.dmg,kind);
 }
 function endBattle(){
+  if(G.tuto){B=null;hideSplash();G.phase='plan';render();if(TUTO)tutoGo(TSTEPS.length-1);return;}
   const won=B.winA,kind=B.kind;
   B=null;hideSplash();G.phase='after';
   if(kind==='pve'&&won&&lootRound(G.round))return lootChoice();
@@ -1475,6 +1500,7 @@ function drawFire(g,rm,R){
 function drawRooms(g,s,geo,battle){
   for(const room of ROOMS){
     const R=roomRect(geo,room,s.L),rm=s.rooms[room],spr=spriteReady(s.L);
+    if(G.tuto&&tutoRoom()===room&&(s===PLAN||(B&&s===B.A))){const k=.55+.45*Math.sin(TIME*6);g.save();g.strokeStyle=`rgba(255,209,102,${k})`;g.lineWidth=3;g.shadowColor='#ffd166';g.shadowBlur=12;rr(g,R.x-2,R.y-2,R.w+4,R.h+4,5);g.stroke();g.restore();}
     if(!spr){g.fillStyle='#24170e';g.strokeStyle='#8a6a46';g.lineWidth=1.5;rr(g,R.x,R.y,R.w,R.h,4);g.fill();g.stroke();}
     if(rm.dmg>0){g.fillStyle=`rgba(217,83,79,${Math.min(.45,rm.dmg*.15)})`;rr(g,R.x,R.y,R.w,R.h,4);g.fill();}
     g.fillStyle='rgba(241,228,198,.72)';g.font='500 10px "Alegreya Sans",sans-serif';g.textAlign='left';
@@ -1537,6 +1563,120 @@ function smoke(Bt,s,wi){
   const p=muzzleXY(s,wi),dir=geoOf(s).mirror?-1:1;
   Bt.parts.push({x:p.x+dir*4,y:p.y,vx:0,vy:0,life:.15,max:.15,col:'255,210,110',r:7,flash:true});
   for(let i=0;i<6;i++)Bt.parts.push({x:p.x+dir*6,y:p.y,vx:dir*(10+Math.random()*25),vy:-Math.random()*15,life:.9,max:.9,col:'200,200,200',r:4});
+}
+function shieldPath(g,w,h){g.beginPath();g.moveTo(-w/2,-h/2);g.lineTo(w/2,-h/2);g.lineTo(w/2,-h*.05);g.quadraticCurveTo(w/2,h*.32,0,h/2);g.quadraticCurveTo(-w/2,h*.32,-w/2,-h*.05);g.closePath();}
+/* ----- pavois : écu peint en bois et fer, rendu haute définition puis mis en cache ----- */
+const PAV_CACHE={};
+function srand(seed){let x=seed%2147483647;if(x<=0)x+=2147483646;return()=>{x=x*16807%2147483647;return(x-1)/2147483646;};}
+function pavShape(g,ox,oy,W,H){
+  g.beginPath();
+  g.moveTo(ox-W/2,oy-H/2+12);
+  g.quadraticCurveTo(ox,oy-H/2-10,ox+W/2,oy-H/2+12);
+  g.lineTo(ox+W/2,oy-8);
+  g.bezierCurveTo(ox+W/2,oy+H*.28,ox+22,oy+H*.42,ox,oy+H/2);
+  g.bezierCurveTo(ox-22,oy+H*.42,ox-W/2,oy+H*.28,ox-W/2,oy-8);
+  g.closePath();
+}
+function pavRim(ox,oy,W,H){
+  const pts=[];
+  for(let i=0;i<=6;i++){const t=i/6;pts.push([ox-W/2+W*t,oy-H/2+12-22*4*t*(1-t)*.5]);}
+  const bez=(p0,p1,p2,p3,t)=>{const u=1-t;return u*u*u*p0+3*u*u*t*p1+3*u*t*t*p2+t*t*t*p3;};
+  for(let i=1;i<=5;i++){const t=i/6;pts.push([bez(ox+W/2,ox+W/2,ox+22,ox,t),bez(oy-8,oy+H*.28,oy+H*.42,oy+H/2,t)]);pts.push([bez(ox-W/2,ox-W/2,ox-22,ox,t),bez(oy-8,oy+H*.28,oy+H*.42,oy+H/2,t)]);}
+  pts.push([ox+W/2,oy-30],[ox-W/2,oy-30]);
+  return pts;
+}
+function pavCrack(g,R,x,y,len,ang){
+  const pts=[[x,y]];let a=ang;
+  for(let i=0;i<len;i++){a+=(R()-.5)*.9;x+=Math.cos(a)*9;y+=Math.sin(a)*9;pts.push([x,y]);
+    if(R()<.25){let bx=x,by=y,ba=a+(R()<.5?-1:1)*(.6+R()*.6);g.beginPath();g.moveTo(bx,by);for(let j=0;j<3;j++){ba+=(R()-.5)*.6;bx+=Math.cos(ba)*7;by+=Math.sin(ba)*7;g.lineTo(bx,by);}g.strokeStyle='rgba(15,8,4,.85)';g.lineWidth=1.6;g.stroke();}}
+  g.beginPath();pts.forEach(([px,py],i)=>i?g.lineTo(px,py):g.moveTo(px,py));
+  g.strokeStyle='rgba(12,6,2,.95)';g.lineWidth=3.2;g.stroke();
+  g.beginPath();pts.forEach(([px,py],i)=>i?g.lineTo(px+1.5,py+1.2):g.moveTo(px+1.5,py+1.2));
+  g.strokeStyle='rgba(255,230,190,.35)';g.lineWidth=1;g.stroke();
+}
+function pavPaint(col,state){
+  const c=document.createElement('canvas');c.width=200;c.height=260;const g=c.getContext('2d');
+  if(!g||!g.createLinearGradient)return null;
+  const R=srand(97+state*31),ox=100,oy=128,W=168,H=214;
+  // bois : planches verticales et veinure
+  g.save();pavShape(g,ox,oy,W,H);g.clip();
+  const wood=g.createLinearGradient(0,0,200,0);wood.addColorStop(0,'#6b4426');wood.addColorStop(.5,'#8a5a32');wood.addColorStop(1,'#5a371d');
+  g.fillStyle=wood;g.fillRect(0,0,200,260);
+  for(let x=ox-W/2+42;x<ox+W/2;x+=42){g.fillStyle='rgba(30,15,5,.6)';g.fillRect(x-1.5,0,3,260);g.fillStyle='rgba(255,220,170,.12)';g.fillRect(x+1.5,0,1,260);}
+  for(let i=0;i<70;i++){const x=R()*200,y0=R()*260;g.strokeStyle=`rgba(40,20,8,${.12+R()*.18})`;g.lineWidth=.8+R();g.beginPath();g.moveTo(x,y0);for(let y=y0;y<y0+60;y+=8)g.lineTo(x+Math.sin(y*.15+i)*2,y);g.stroke();}
+  // peinture aux couleurs du capitaine, écaillée
+  g.globalAlpha=.9;g.fillStyle=col;g.fillRect(0,0,200,260);g.globalAlpha=1;
+  for(let x=ox-W/2+42;x<ox+W/2;x+=42){g.fillStyle='rgba(25,12,4,.45)';g.fillRect(x-1.2,0,2.4,260);g.fillStyle='rgba(255,235,200,.10)';g.fillRect(x+1.2,0,1,260);}
+  for(let i=0;i<40;i++){const x=R()*200,y0=R()*260;g.strokeStyle='rgba(30,15,5,.10)';g.lineWidth=1;g.beginPath();g.moveTo(x,y0);for(let y=y0;y<y0+50;y+=8)g.lineTo(x+Math.sin(y*.15+i)*2,y);g.stroke();}
+  const shade=g.createLinearGradient(0,0,0,260);shade.addColorStop(0,'rgba(255,255,255,.08)');shade.addColorStop(1,'rgba(0,0,0,.35)');g.fillStyle=shade;g.fillRect(0,0,200,260);
+  // chevron héraldique
+  g.beginPath();g.moveTo(ox-W/2-4,oy+30);g.lineTo(ox,oy-34);g.lineTo(ox+W/2+4,oy+30);g.lineTo(ox+W/2+4,oy+62);g.lineTo(ox,oy-2);g.lineTo(ox-W/2-4,oy+62);g.closePath();
+  g.fillStyle='#ead9b0';g.fill();g.strokeStyle='rgba(30,15,5,.85)';g.lineWidth=3;g.stroke();
+  const chev=g.createLinearGradient(0,oy-34,0,oy+62);chev.addColorStop(0,'rgba(255,255,255,.18)');chev.addColorStop(1,'rgba(90,60,20,.3)');g.fillStyle=chev;g.fill();
+  // écaillures : le bois réapparaît
+  for(let i=0;i<10+state*16;i++){const edge=R()<.6,ang=R()*6.3,x=edge?ox+Math.cos(ang)*W*.42:ox+(R()-.5)*W*.8,y=edge?oy+Math.sin(ang)*H*.42:oy+(R()-.5)*H*.8,r=1.2+R()*(2.5+state*2);g.fillStyle=R()<.5?'#7a4a26':'#5a371d';g.beginPath();g.ellipse(x,y,r,r*(.4+R()*.6),R()*3,0,7);g.fill();}
+  // salissures
+  for(let i=0;i<120;i++){g.fillStyle=`rgba(20,10,5,${R()*.12})`;g.fillRect(R()*200,R()*260,1+R()*2,1+R()*2);}
+  // éclairage en biseau
+  const lit=g.createLinearGradient(20,10,190,250);lit.addColorStop(0,'rgba(255,240,210,.22)');lit.addColorStop(.5,'rgba(255,240,210,0)');lit.addColorStop(1,'rgba(0,0,0,.4)');g.fillStyle=lit;g.fillRect(0,0,200,260);
+  // fissures selon l'état
+  if(state>=1){pavCrack(g,R,ox+38,oy-70,7,1.9);pavCrack(g,R,ox-44,oy-20,5,.6);}
+  if(state>=2){pavCrack(g,R,ox+8,oy+10,9,1.5);pavCrack(g,R,ox-20,oy-80,6,1.2);pavCrack(g,R,ox+60,oy+20,5,2.6);}
+  g.restore();
+  // cerclage de fer
+  pavShape(g,ox,oy,W,H);
+  const iron=g.createLinearGradient(0,0,200,260);iron.addColorStop(0,'#b9c0c6');iron.addColorStop(.45,'#5d6369');iron.addColorStop(1,'#2a2d31');
+  g.strokeStyle=iron;g.lineWidth=13;g.stroke();
+  g.strokeStyle='rgba(10,10,12,.9)';g.lineWidth=2;g.stroke();
+  g.save();pavShape(g,ox,oy,W-13,H-13);g.strokeStyle='rgba(0,0,0,.55)';g.lineWidth=2;g.stroke();g.restore();
+  // rivets
+  for(const [x,y] of pavRim(ox,oy,W,H)){const rg=g.createRadialGradient(x-1.5,y-1.5,0,x,y,4.5);rg.addColorStop(0,'#e8ecef');rg.addColorStop(.5,'#7d848a');rg.addColorStop(1,'#1d2024');g.fillStyle=rg;g.beginPath();g.arc(x,y,4.2,0,7);g.fill();}
+  // umbo de fer au sommet du chevron
+  const bx=ox,by=oy-6,ug=g.createRadialGradient(bx-5,by-6,1,bx,by,17);ug.addColorStop(0,'#f2f4f5');ug.addColorStop(.35,'#8c9399');ug.addColorStop(1,'#202327');
+  g.fillStyle=ug;g.beginPath();g.arc(bx,by,15,0,7);g.fill();g.strokeStyle='#111';g.lineWidth=1.5;g.stroke();
+  // éclat manquant (état très abîmé)
+  if(state>=2){g.save();g.globalCompositeOperation='destination-out';g.beginPath();g.moveTo(ox+W/2+10,oy-H/2-4);g.lineTo(ox+W/2-34,oy-H/2+2);g.lineTo(ox+W/2-22,oy-H/2+20);g.lineTo(ox+W/2-30,oy-H/2+34);g.lineTo(ox+W/2-8,oy-H/2+44);g.lineTo(ox+W/2+10,oy-H/2+52);g.closePath();g.fill();g.restore();
+    g.strokeStyle='#d8b98a';g.lineWidth=1.4;g.beginPath();g.moveTo(ox+W/2-34,oy-H/2+2);g.lineTo(ox+W/2-22,oy-H/2+20);g.lineTo(ox+W/2-30,oy-H/2+34);g.lineTo(ox+W/2-8,oy-H/2+44);g.stroke();}
+  return c;
+}
+function pavImg(col,state){
+  const key=col+'|'+state;if(PAV_CACHE[key]!==undefined)return PAV_CACHE[key];
+  let c;
+  if(state<3)c=pavPaint(col,state);
+  else{
+    const base=pavPaint(col,2);if(!base)return PAV_CACHE[key]=null;
+    c=document.createElement('canvas');c.width=230;c.height=280;const g=c.getContext('2d');
+    const split=[[100,0],[94,40],[108,78],[92,120],[106,160],[96,200],[102,262]];
+    for(const side of [-1,1]){
+      g.save();g.translate(115+side*12,150+(side>0?14:4));g.rotate(side*.16);g.translate(-100,-130);
+      g.beginPath();g.moveTo(side<0?0:200,0);split.forEach(([x,y])=>g.lineTo(x,y));g.lineTo(side<0?0:200,262);g.closePath();g.clip();
+      g.drawImage(base,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(0,0,0,.28)';g.fillRect(0,0,200,262);g.globalCompositeOperation='source-over';
+      g.strokeStyle='#e2c495';g.lineWidth=2;g.beginPath();split.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();
+      g.restore();
+    }
+  }
+  return PAV_CACHE[key]=c;
+}
+function pavState(s){const mx=shieldMax(s),L=Math.max(0,s.layers);if(L<=0)return 3;if(L>=mx)return 0;return L/mx>=.5?1:2;}
+function drawPavois(g,s,battle){
+  const mx=shieldMax(s);if(mx<=0)return;
+  const p=shieldPos(s),L=Math.max(0,s.layers),st=pavState(s),img=pavImg(s.color||'#8a7a6a',st);
+  const WS=st===3?62:54,HS=st===3?76:70,dir=p.dir;
+  const shake=s.shPulse>0?Math.sin(TIME*80)*3*(s.shPulse/.45):0;
+  g.save();g.translate(p.x+shake,p.y);g.rotate(-.07*dir);
+  // crochets de fer accrochés au plat-bord
+  g.strokeStyle='#2a2d31';g.lineWidth=2.2;
+  for(const hx of [-10,10]){g.beginPath();g.moveTo(hx,-HS/2+6);g.lineTo(hx,-HS/2-5);g.quadraticCurveTo(hx+3*dir,-HS/2-9,hx+5*dir,-HS/2-5);g.stroke();}
+  if(img){
+    g.shadowColor='rgba(0,0,0,.6)';g.shadowBlur=7;g.shadowOffsetX=3*dir;g.shadowOffsetY=4;
+    g.drawImage(img,-WS/2,-HS/2,WS,HS);
+    g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetX=0;g.shadowOffsetY=0;
+  }
+  if(s.shPulse>0){g.globalAlpha=s.shPulse/.45*.8;g.globalCompositeOperation='lighter';g.fillStyle='rgba(255,220,150,.6)';g.beginPath();g.ellipse(0,0,WS*.45,HS*.45,0,0,7);g.fill();g.globalCompositeOperation='source-over';g.globalAlpha=1;}
+  g.rotate(.07*dir);
+  for(let i=0;i<mx;i++){const x=-mx*4+i*8;g.fillStyle=i<L?'#e0b04f':'rgba(224,176,79,.22)';g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=.8;g.fillRect(x,-HS/2-16,6,5);g.strokeRect(x,-HS/2-16,6,5);}
+  if(battle&&L<mx&&s.shT>0){g.strokeStyle='#8fd36b';g.lineWidth=2.5;g.beginPath();g.arc(0,0,HS/2+5,-Math.PI/2,-Math.PI/2+Math.PI*2*s.shT/3);g.stroke();}
+  g.restore();
 }
 function drawShield(g,s){
   const L=s.layers;if(L<=0&&!(s.shPulse>0))return;
@@ -1633,7 +1773,7 @@ function drawSea(g,geo,front){
 }
 function drawShipHud(g,s,geo,battle){
   const cx=geo.gx+s.L.cols*T/2,top=geo.gy-186+geo.bob;
-  const mx=shieldMax(s);
+  const mx=0;
   for(let i=0;i<mx;i++){const x=cx-mx*14+i*28+3;g.fillStyle=i<s.layers?'#c89b5a':'rgba(200,155,90,.2)';g.strokeStyle='#22150b';g.lineWidth=1;rr(g,x,top,22,7,3);g.fill();g.stroke();}
   if(battle&&s.gi===1){
     powerUse(s);
@@ -1655,7 +1795,7 @@ function drawScene(dt){
   g.setTransform(d*VIEW.k,0,0,d*VIEW.k,d*VIEW.ox,d*VIEW.oy);
   const ships=B?[B.A,B.Bs]:(PLAN?[PLAN]:[]);
   ships.forEach(s=>drawSea(g,geoOf(s),false));
-  ships.forEach(s=>{const geo=geoOf(s);drawHull(g,s,geo);drawMounts(g,s,!!B);drawRooms(g,s,geo,!!B);drawCrew(g,s,!!B);if(B)drawShield(g,s);drawSea(g,geo,true);drawShipHud(g,s,geo,!!B);});
+  ships.forEach(s=>{const geo=geoOf(s);drawHull(g,s,geo);drawPavois(g,s,!!B);drawMounts(g,s,!!B);drawRooms(g,s,geo,!!B);drawCrew(g,s,!!B);drawSea(g,geo,true);drawShipHud(g,s,geo,!!B);});
   if(B)drawBattleFx(g,dt);
 }
 let lastTs=0,uiT=0;
@@ -1667,9 +1807,9 @@ function frame(ts){
   if(B&&!G.paused){
     if(B.intro>0)B.intro-=dt;
     else if(!B.over&&!B.hold){let sim=dt*B.speed;while(sim>1e-6&&!B.over){const h=Math.min(.02,sim);stepBattle(B,h);sim-=h;}}
-    else{B.doneT+=dt;if(B.doneT>.7&&!B.resShown){B.resShown=true;humanBattleOver();}if(B.doneT>2.5&&!B.closed){B.closed=true;endBattle();}}
+    else if(B.over){B.doneT+=dt;if(B.doneT>.7&&!B.resShown){B.resShown=true;humanBattleOver();}if(B.doneT>2.5&&!B.closed){B.closed=true;endBattle();}}
   }
-  uiT-=dt;if(uiT<=0){uiT=.1;liveUI();}
+  uiT-=dt;if(uiT<=0){uiT=.1;liveUI();tutoTick();}
   drawScene(dt);
   requestAnimationFrame(frame);
 }
@@ -1724,14 +1864,15 @@ function crewListHTML(){
   +`<div class="crewbtns"><button class="btn sm" data-act="selall">Tous</button><button class="btn sm" data-act="stations">Aux postes</button><button class="btn sm" data-act="hold" id="holdbtn">Pause tactique</button></div>`;
 }
 function traitsHTML(){
-  if(B)return crewListHTML();
+  if(B)return crewListHTML()+powerHTML();
   const bd=G.view!==null?aiBoard(G.caps[G.view]):humanBoard(),units=bd.units;
   const c=counts(units,emblemsOf(bd.augs));
   const augs=(bd.augs||[]).length?`<div class="augs"><b>Augments</b>${bd.augs.map(k=>`<span class="augchip" title="${augInfo(k).d}">${augInfo(k).n}</span>`).join('')}</div>`:'';
   const all=[...Object.keys(ORIG).map(k=>['o',k,ORIG[k]]),...Object.keys(ROLES).map(k=>['r',k,ROLES[k]])].filter(x=>c[x[1]]);
   all.sort((a,b)=>lvl(c[b[1]])-lvl(c[a[1]])||c[b[1]]-c[a[1]]);
-  if(!all.length)return '<div class="tempty">Embarque des marins pour activer des synergies.</div>'+augs;
-  return augs+all.map(([t,k,def])=>{const n=c[k],l=lvl(n);
+  const pw=G.view===null?powerHTML():'';
+  if(!all.length)return pw+'<div class="tempty">Embarque des marins pour activer des synergies.</div>'+augs;
+  return pw+augs+all.map(([t,k,def])=>{const n=c[k],l=lvl(n);
     return `<div class="tr${l?' on l'+l:''}" data-tip="t:${k}"><span class="hex">${n}</span><span class="tinfo"><b>${def.n}</b><span class="bp"><i class="${n>=2?'a':''}">2</i><i class="${n>=3?'a':''}">3</i></span></span></div>`;}).join('');
 }
 /* ----- plateau ----- */
@@ -1743,7 +1884,7 @@ function powerHTML(){
   const cols=SYS.map(k=>{const y=s.sys[k],dm=k==='grappins'?0:Math.ceil(s.rooms[k].dmg-1e-6);let bars='';
     for(let i=y.max-1;i>=0;i--){const broken=i>=y.max-dm,on=i<y.alloc&&!broken,idle=i<y.alloc&&broken;bars+=`<i class="${broken?'br':on?'on':''}${idle?' idle':''}"></i>`;}
     return `<div class="sysc" title="${SYSN[k]} : ${y.alloc} / ${y.max}"><button class="pb" data-act="pw" data-v="${k}:1" aria-label="Ajouter un matelot à ${SYSN[k]}">+</button><div class="bars" id="bars_${k}">${bars}</div><button class="pb" data-act="pw" data-v="${k}:-1" aria-label="Retirer un matelot de ${SYSN[k]}">−</button><span class="sysn">${SYSS[k]}</span></div>`;}).join('');
-  return `<div class="pwr ov" id="pwr"><div class="reac"><b>Matelots</b><span class="rp" id="reac">${reac}</span><small id="reacn">${free} libre${free>1?'s':''} / ${s.reactor}</small></div><div class="sysrow">${cols}</div></div>`;
+  return `<div class="pwr" id="pwr"><div class="reac"><b>Matelots</b><span class="rp" id="reac">${reac}</span><small id="reacn">${free} libre${free>1?'s':''} / ${s.reactor}</small></div><div class="sysrow">${cols}</div></div>`;
 }
 function boardHTML(){
   if(B){
@@ -1753,7 +1894,7 @@ function boardHTML(){
       <div class="vside foe"><span class="vbars"><b>${o.cap?o.cap.short+(o.ghost?' (fantôme)':''):o.name}</b><span class="vhull"><i id="hB"></i><em id="hBt"></em></span><span id="sB" class="vpl"></span></span><span class="crest" style="--c:${o.color}">${(o.cap?o.cap.short:o.name).replace(/^(Le |La )/,'').charAt(0)}</span></div></div>
       <div class="aimhint ov" id="aimhint">Choisis une salle ennemie</div>
       <div class="holdhint ov" id="holdhint">Pause tactique : donne tes ordres, Espace pour reprendre</div>
-      <div class="aimhint ov" id="boardhint">Choisis la salle ennemie à aborder</div>${powerHTML()}`;
+      <div class="aimhint ov" id="boardhint">Choisis la salle ennemie à aborder</div>`;
   }
   if(G.view!==null){const c=G.caps[G.view];return `<div class="viewbar ov"><span>Navire de <b style="color:${c.color}">${c.name}</b>, niveau ${c.level}, ${c.gold} or</span><button class="btn sm" data-act="back">Revenir à mon navire</button></div>`;}
   const s=PLAN,bat=eff(s,'batterie'),need=powerNeed(s);
@@ -1762,10 +1903,10 @@ function boardHTML(){
   return `<div class="chips ov">
     <span class="chip ship"><b>${S.L.n}</b><small>${S.L.cls}</small></span>
     <span class="chip">${ICON.hull}<b>${s.hullMax}</b><small>coque</small></span>
-    <span class="chip">${ICON.shield}<b>${shieldMax(s)}</b><small>bastingage</small></span>
+    <span class="chip">${ICON.shield}<b>${shieldMax(s)}</b><small>pavois</small></span>
     <span class="chip${eff(s,'barre')===0?' bad':''}">${ICON.wind}<b>${Math.round(eva(s)*100)} %</b><small>${eff(s,'barre')===0?'barre vide':'esquive'}</small></span>
     <span class="chip${bat<need?' bad':''}">${ICON.bolt}<b>${bat} / ${need}</b><small>batterie</small></span></div>
-    ${sel?`<div class="selcard ov">${sel}</div>`:''}${powerHTML()}`;
+    ${sel?`<div class="selcard ov">${sel}</div>`:''}`;
 }
 function unitCardHTML(k,s,withSell,items){
   const d=UD[k],o=ORIG[d.o],ro=ROLES[d.ro];
@@ -1996,14 +2137,14 @@ const ACT={
   equip(v){if(B||S.arms.length>=4)return;const k=S.hold.splice(+v,1)[0];S.arms.push({k,target:defTarget(k)});render();},
   buyw(){if(B)return;const am=S.armory,w=am&&WEAPONS[am.k];if(!w||am.sold||S.gold<w.price)return;if(S.arms.length>=4&&S.hold.length>=4)return toast('Soute pleine');S.gold-=w.price;am.sold=true;toast(addWeapon(am.k));render();},
   drawer(){if(G.drawer){G.drawer=false;render();}else openDrawer();},
-  go(){startRound();},
+  go(){if(TUTO&&TUTO.cur&&TUTO.cur.final)return;if(TUTO&&TUTO.i<13)return toast('Termine d\u2019abord l\u2019étape du tutoriel');startRound();},
   back(){G.view=null;render();},
   speed(v){if(B){B.speed=+v;$('#dock').innerHTML=dockHTML();liveUI();}},
   skip(){if(B&&!B.over){B.intro=0;B.speed=25;B.hold=false;}},
   pw(v){const [k,d]=v.split(':'),n=+d,s=powerShip();if(!s||!s.sys)return;const y=s.sys[k];
     if(n>0){if(used(s)>=s.reactor)return toast('Plus de matelots libres');if(y.alloc>=y.max)return toast(SYSN[k]+' au niveau maximum');y.alloc++;}
     else{if(y.alloc<=0)return;y.alloc--;}
-    S.alloc[k]=y.alloc;if(B){updatePower();liveUI();}else render();},
+    S.alloc[k]=y.alloc;if(B){updatePower();liveUI();}else{PLAN=makeShip(humanBoard(),0);$('#traits').innerHTML=traitsHTML();$('#board').innerHTML=boardHTML();}},
   arm(v){const i=+v;if(!S.arms[i])return;const a=S.arms[i];a.armed=a.armed===false;if(B&&B.A.weapons[i])B.A.weapons[i].armed=a.armed;if(B)liveUI();else render();},
   board(){if(!B||B.A.grap<1)return;if(!B.selC.length)return toast('Sélectionne les marins à envoyer, puis clique une salle ennemie');B.boardMode=!B.boardMode;liveUI();},
   retreat(){if(B&&recallParty(B,B.A))liveUI();},
@@ -2033,7 +2174,7 @@ CV.addEventListener('click',e=>{
   const p=toWorld(e.clientX,e.clientY);
   if(B)return battleClick(p.x,p.y,e.shiftKey||e.ctrlKey||e.metaKey);
   if(G.view!==null)return;
-  if(mountAt(PLAN,p.x,p.y)>=0&&occupant(...(()=>{const t=tileAtGeo(VIEW.geos[0],S.L,p.x,p.y);return t?[t.c,t.r]:[-1,-1];})())===null)return openDrawer();
+  if(p.y<VIEW.geos[0].gy+VIEW.geos[0].bob-3&&mountAt(PLAN,p.x,p.y)>=0&&occupant(...(()=>{const t=tileAtGeo(VIEW.geos[0],S.L,p.x,p.y);return t?[t.c,t.r]:[-1,-1];})())===null)return openDrawer();
   const geo=VIEW.geos[0];
   const c=Math.floor((p.x-geo.gx)/T),row=Math.floor((p.y-geo.gy-geo.bob)/T);
   if(c>=0&&c<S.L.cols&&row>=0&&row<2){if(S.selItem!==null){const o=occupant(c,row);if(o!==null)return equipItem(S.selItem,o);}clickTile(c,row);}
@@ -2165,6 +2306,7 @@ const DIFF={facile:{n:'Mousse',skill:[.3,.3],gold:-1},normal:{n:'Corsaire',skill
 /* ================= menu principal ================= */
 let menuWalkT=0;
 function showMenu(){
+  if(typeof TUTO!=='undefined'&&TUTO)endTuto();
   B=null;hideSplash();closeDrawer();
   G={phase:'menu',view:null,caps:[],round:1};
   S={sel:null};
@@ -2254,16 +2396,16 @@ function renderScreen(){
     title='Comment jouer';
     const steps=[
       ['Recrute','Achète des marins à la taverne. Trois identiques fusionnent en version étoilée.'],
-      ['Poste ton équipage','Clique un marin puis une case du navire. Son rôle double sa puissance à son poste.'],
-      ['Arme ton navire','Dans Artillerie, équipe tes pièces et choisis la salle ennemie visée.'],
+      ['Poste ton équipage','Clique un marin puis une case du navire. Son rôle double son bonus à son poste favori.'],
+      ['Arme ton navire','Dans le tiroir Navire, équipe tes pièces et choisis la salle ennemie visée.'],
       ['Commande en combat','Clique un marin puis une salle, ou glisse-le. Espace met le combat en pause tactique.'],
-      ['Gère tes matelots','Répartis tes hommes de pont entre voilure, bastingage, batterie, infirmerie et grappins avec les boutons + et \u2212.'],
+      ['Gère tes matelots','Répartis tes hommes de pont entre voilure, pavois, batterie, infirmerie et grappins avec les boutons + et \u2212.'],
       ['À l\u2019abordage','Grappins chargés : sélectionne des marins, clique « À l\u2019abordage », puis une salle ennemie. Ils se battent et sabotent.'],
       ['Équipe tes marins','Glisse un objet du coffre sur un marin. Deux objets maximum par marin.'],
       ['Augments et escales','Aux manches 3, 9 et 15, choisis un bonus permanent. Aux escales, chaque capitaine pioche un marin armé.'],
       ['Survis','Une défaite coûte de l\u2019intégrité. À zéro, ton navire sombre.'],
       ['Gère ton or','Garde de l\u2019or pour les intérêts, enchaîne les séries pour des bonus.']];
-    body=`<ol class="steps">${steps.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
+    body=`${G.phase==='menu'?'<div class="tutobox"><div><b>Tutoriel jouable</b><span>Une partie guidée, étape par étape : recruter, poster, gérer les matelots, viser, éteindre un feu, aborder.</span></div><button class="mbtn main" data-act="tuto">Lancer le tutoriel</button></div>':''}<ol class="steps">${steps.map(([t,d])=>`<li><b>${t}</b><span>${d}</span></li>`).join('')}</ol>
       <p class="hint">Raccourcis : D relance, F achète de l\u2019XP, Échap met en pause. En combat : 1 à 9 sélectionnent un marin, A sélectionne tout l\u2019équipage, Espace lance la pause tactique.</p>`;
   }else if(n==='codex'){
     title='Codex';
@@ -2278,8 +2420,8 @@ function renderScreen(){
       inner=blk(ORIG,'Origines')+blk(ROLES,'Rôles');
     }else if(SCR.tab==='artillerie')inner=`<div class="cgrid">${Object.keys(WEAPONS).map(k=>`<div class="wbox">${weaponCardHTML(k)}<span class="wprice">${ICON.coin}${WEAPONS[k].price}</span></div>`).join('')}</div>`;
     else{
-      const rooms=[['Barre','Sans timonier, aucune esquive.'],['Voilure','Ajoute de l\u2019esquive.'],['Charpenterie','Fournit le bordage, qui bloque un boulet par couche.'],['Batterie','Fournit la puissance qui alimente les armes.'],['Infirmerie','Soigne les marins blessés qui s\u2019y rendent.']];
-      const mech=[['Incendies','Brûlent salle, équipage et coque. Envoie des marins dans la salle pour les éteindre.'],['Réparations','Un marin répare la salle où il se trouve. À toi de l\u2019y envoyer.'],['Dégâts aux salles','Une salle touchée perd de la puissance jusqu\u2019à réparation.'],['Défaite','Dégâts = base de la manche + marins adverses encore debout.'],['Bastingage','Chaque paire de matelots affectés tend une couche de hamacs et de filets qui arrête un boulet. Le mortier passe au-dessus.'],['Abordage','Les abordeurs combattent les défenseurs de la salle, puis sabotent le système. Équipage anéanti : victoire immédiate.'],['Énergie','Une salle touchée perd des barres : les matelots qui y sont affectés restent bloqués jusqu\u2019à la réparation.']];
+      const rooms=[['Barre','Sans timonier, aucune esquive.'],['Voilure','Ajoute de l\u2019esquive.'],['Charpenterie','Atelier du pavois : un marin posté ici répare l\u2019écu de proue.'],['Batterie','Fournit la puissance qui alimente les armes.'],['Infirmerie','Soigne les marins blessés qui s\u2019y rendent.']];
+      const mech=[['Incendies','Brûlent salle, équipage et coque. Envoie des marins dans la salle pour les éteindre.'],['Réparations','Un marin répare la salle où il se trouve. À toi de l\u2019y envoyer.'],['Dégâts aux salles','Une salle touchée perd de la puissance jusqu\u2019à réparation.'],['Défaite','Dégâts = base de la manche + marins adverses encore debout.'],['Pavois','Un grand écu fixé à la proue. Chaque paire de matelots lui donne une couche qui arrête un boulet. Il se fissure, puis se brise. Seul un marin posté en Charpenterie le remet à neuf. Le mortier passe au-dessus.'],['Abordage','Les abordeurs combattent les défenseurs de la salle, puis sabotent le système. Équipage anéanti : victoire immédiate.'],['Énergie','Une salle touchée perd des barres : les matelots qui y sont affectés restent bloqués jusqu\u2019à la réparation.']];
       inner=`<h4>Salles</h4><div class="sgrid">${rooms.map(([t,d])=>`<div class="sbox"><b>${t}</b><span>${d}</span></div>`).join('')}</div><h4>Règles du combat</h4><div class="sgrid">${mech.map(([t,d])=>`<div class="sbox"><b>${t}</b><span>${d}</span></div>`).join('')}</div>`;
     }
     body=`<div class="tabs">${tabs.map(([k,l])=>`<button class="${SCR.tab===k?'on':''}" data-act="ctab" data-v="${k}">${l}</button>`).join('')}</div><div class="cbody">${inner}</div>`;
@@ -2310,6 +2452,80 @@ Object.assign(ACT,{
   quit(){G.paused=false;showMenu();},
   tomenu(){showMenu();},
   again(){showSelect();}
+});
+
+/* ================= tutoriel jouable ================= */
+let TUTO=null;
+const TSTEPS=[
+  {t:'Bienvenue à bord',d:'Tu commandes un navire. Recrute des marins, poste-les, arme ton navire et coule tes rivaux. Suis les étapes, la zone à utiliser brille en doré.',next:true},
+  {t:'Recrute un marin',d:'Clique sur Rosa dans la taverne, en bas de l\u2019écran. Elle coûte 1 or.',sel:'.shop .card',done:()=>Object.values(S.units).some(u=>u.k==='rosa')},
+  {t:'Poste-la en Batterie',d:'Glisse Rosa depuis le banc jusqu\u2019à une case de la Batterie. Tu peux aussi cliquer sur elle, puis sur la case. Une canonnière y est plus efficace.',sel:'.btok',room:'batterie',done:()=>tutoPlaced(u=>true,'batterie')},
+  {t:'Un timonier à la barre',d:'Recrute Anselme et poste-le à la Barre. Sans personne à la barre, ton navire n\u2019esquive aucun boulet.',sel:'.shop .card',room:'barre',done:()=>tutoPlaced(u=>true,'barre')},
+  {t:'Trois identiques fusionnent',d:'Achète les trois Tiago de la taverne. Trois marins identiques fusionnent en un marin deux étoiles, bien plus fort.',sel:'.shop .card',enter:()=>{S.gold=Math.max(S.gold,6);S.shop=['tiago','tiago','tiago','gaspard','moussa'];render();},done:()=>Object.values(S.units).some(u=>u.s>=2)},
+  {t:'Poste Tiago en Voilure',d:'Tiago est gabier : place-le en Voilure, il aidera ton navire à esquiver.',sel:'.btok',room:'voilure',done:()=>tutoPlaced(u=>u.k==='tiago','voilure')},
+  {t:'Les synergies',d:'À gauche, les origines et rôles de tes marins à bord. Deux ou trois marins d\u2019une même famille débloquent un bonus pour tout le navire.',sel:'#traits .tr',next:true},
+  {t:'Répartis tes matelots',d:'Le panneau Matelots est ton énergie : chaque matelot fait tourner un système. Clique le + au-dessus de Voiles pour gagner de l\u2019esquive.',sel:'.sysc .pb',enter:()=>{S.sysUp.voilure=Math.max(1,S.sysUp.voilure||0);S.alloc.grappins=0;TUTO.v0=S.alloc.voilure;render();},done:()=>S.alloc.voilure>TUTO.v0},
+  {t:'Ouvre le tiroir Navire',d:'Clique sur le bouton « Navire », à droite de la taverne.',sel:'[data-act="drawer"]',done:()=>G.drawer},
+  {t:'Choisis une cible',d:'Sur le mini-plan de ta première arme, clique « Batterie » : elle visera la batterie ennemie. Sans cible, elle tire au hasard.',sel:'.schema',done:()=>S.arms.some(a=>a.target!=='auto')},
+  {t:'Le chantier naval',d:'En haut du tiroir, tu achètes des matelots en plus ou tu agrandis tes systèmes. Ferme le tiroir pour continuer.',sel:'.yard',done:()=>!G.drawer},
+  {t:'Équipe un marin',d:'Un sabre vient d\u2019arriver dans le coffre, à gauche du banc. Glisse-le sur un de tes marins.',sel:'.chest .itb',enter:()=>{giveItem('sabre');render();},done:()=>Object.values(S.units).some(u=>(u.items||[]).length)},
+  {t:'Gère ton or',d:'Chaque tranche de 10 or rapporte 1 or d\u2019intérêt par manche. « XP +4 » fait monter de niveau pour embarquer plus de marins. « Relancer » renouvelle la taverne.',sel:'.rblock .gold, .lblock',next:true},
+  {t:'Au combat !',d:'Clique « Lever l\u2019ancre ». Ici le chrono est coupé, en partie tu disposes de 40 secondes pour te préparer.',sel:'[data-act="go"]',done:()=>!!B},
+  {t:'Pause tactique',d:'Appuie sur Espace, ou clique « Pause tactique », pour figer le combat et donner tes ordres tranquillement.',sel:'#holdbtn',done:()=>B&&B.hold},
+  {t:'Sélectionne un marin',d:'Clique un de tes marins, sur le navire ou dans la liste à gauche. La touche 1 fonctionne aussi.',sel:'.crew',done:()=>B&&B.selC.length>0},
+  {t:'Donne un ordre',d:'Clique une autre salle de ton navire, ou glisse-y le marin. Il s\u2019y rendra en passant par l\u2019échelle.',done:()=>B&&B.A.own.some(c=>c.path.length||c.x!==c.st.c||c.y!==c.st.r)},
+  {t:'Vise une salle',d:'Clique une carte d\u2019arme en bas, ou le canon sur ton pont, puis une salle du navire ennemi.',sel:'.wcard',enter:()=>{TUTO.tg=B.A.weapons.map(w=>w.target).join();},done:()=>B&&B.A.weapons.map(w=>w.target).join()!==TUTO.tg},
+  {t:'Au feu !',d:'',enter:()=>{const r=ROOMS.find(r=>r!=='barre'&&!ownHere(B.A,r).length)||'infirmerie';TUTO.fire=r;B.A.rooms[r].fire=1;TSTEPS[18].room=r;TUTO.cur.d=`Un incendie ravage la salle ${RN[r]}. Envoie un marin dans cette salle pour l\u2019éteindre, puis reprends le combat avec Espace.`;renderCoach();},done:()=>B&&B.A.rooms[TUTO.fire].fire<=0},
+  {t:'Le pavois',d:'L\u2019écu fixé à la proue arrête un boulet par couche. Il se fissure, puis se brise. Seul un marin posté en Charpenterie le remet à neuf.',next:true},
+  {t:'À l\u2019abordage !',d:'Les grappins sont chargés. Sélectionne un ou deux marins, clique « À l\u2019abordage », puis une salle ennemie. Ils combattront et saboteront le système.',sel:'#bboard',enter:()=>{B.A.sys.grappins.alloc=Math.max(1,B.A.sys.grappins.alloc);B.A.sys.grappins.max=Math.max(1,B.A.sys.grappins.max);B.A.grap=1;B.hold=true;},done:()=>B&&boarders(B,B.A).length>0},
+  {t:'Remporte le combat',d:'Reprends le combat avec Espace. Coule le navire ennemi ou élimine tout son équipage. « Retraite » rapatrie tes abordeurs quand les grappins sont rechargés.',sel:'#holdbtn',done:()=>!B||B.over},
+  {t:'Bien joué, capitaine !',d:'En partie, huit capitaines s\u2019affrontent manche après manche. Aux escales, chacun pioche un marin armé, et aux manches 3, 9 et 15 tu choisis un augment. Le dernier à flot gagne.',final:true}
+];
+function tutoPlaced(f,room){return Object.entries(S.place).some(([id,t])=>S.L.at[t.r][t.c]===room&&f(S.units[id]));}
+function startTuto(){
+  hideScreen();
+  const prev=OPT.plan;OPT.plan=0;
+  newGame('galion');
+  TUTO={i:-1,prevPlan:prev,ok:0};G.tuto=true;G.timer=Infinity;
+  S.gold=12;S.shop=['rosa','anselme','tiago','gaspard','moussa'];
+  document.body.classList.remove('menu');
+  render();tutoGo(0);
+}
+function tutoGo(i){
+  TUTO.i=i;TUTO.cur=Object.assign({},TSTEPS[i]);TUTO.ok=0;
+  if(TUTO.cur.enter)TUTO.cur.enter();
+  renderCoach();
+}
+function renderCoach(){
+  const c=$('#coach');if(!TUTO){c.classList.remove('on');c.innerHTML='';return;}
+  const st=TUTO.cur,n=TSTEPS.length;
+  c.innerHTML=`<div class="cprog"><i style="width:${100*(TUTO.i+1)/n}%"></i></div>
+    <div class="chd"><span>Tutoriel, étape ${TUTO.i+1} sur ${n}</span><button class="mini" data-act="tutoquit">Quitter</button></div>
+    <b class="ct">${st.t}</b><p>${st.d}</p>
+    ${st.next?'<button class="btn go sm" data-act="tutonext">Suivant</button>':''}
+    ${st.final?'<div class="cbtns"><button class="btn go" data-act="tutoplay">Jouer une partie</button><button class="btn" data-act="tutoquit">Menu principal</button></div>':''}`;
+  c.classList.add('on');
+}
+function tutoTick(){
+  if(!TUTO)return;
+  document.querySelectorAll('.coach-hl').forEach(e=>e.classList.remove('coach-hl'));
+  const st=TUTO.cur;
+  if(st.sel&&!modalOpen())document.querySelectorAll(st.sel).forEach(e=>e.classList.add('coach-hl'));
+  if(st.done&&!TUTO.ok){let d=false;try{d=st.done();}catch(e){d=false;}
+    if(d){TUTO.ok=1;toast('Bien joué');setTimeout(()=>{if(TUTO&&TUTO.cur===st&&TUTO.i<TSTEPS.length-1)tutoGo(TUTO.i+1);},650);}}
+}
+function tutoRoom(){return TUTO&&TUTO.cur?TUTO.cur.room||TSTEPS[TUTO.i].room:null;}
+function endTuto(){
+  if(!TUTO)return;
+  OPT.plan=TUTO.prevPlan;TUTO=null;
+  document.querySelectorAll('.coach-hl').forEach(e=>e.classList.remove('coach-hl'));
+  renderCoach();
+}
+Object.assign(ACT,{
+  tuto(){startTuto();},
+  tutonext(){if(TUTO)tutoGo(TUTO.i+1);},
+  tutoquit(){endTuto();showMenu();},
+  tutoplay(){endTuto();showSelect();}
 });
 
 saveOpt();
