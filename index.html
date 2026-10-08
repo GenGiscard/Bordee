@@ -644,7 +644,7 @@ body.combat .pwr{margin-bottom:2px}
 
 #cmap{position:fixed;inset:0;z-index:15;background:rgba(3,8,12,.84);display:none;align-items:center;justify-content:center;padding:16px}
 #cmap.on{display:flex}
-.cmbox{background:var(--glass2);border:1px solid var(--gold);padding:16px 20px;width:min(1040px,100%);max-height:94vh;overflow:auto;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px)}
+.cmbox{background:radial-gradient(ellipse at 50% 60%,var(--tint,#163449),transparent 75%),var(--glass2);border:1px solid var(--gold);padding:16px 20px;width:min(1040px,100%);max-height:94vh;overflow:auto;clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px)}
 .cmhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .cmhead h2{font-family:var(--disp);font-weight:400;font-size:38px;color:var(--gold);margin:0;line-height:1}
 .cmfleet{display:flex;align-items:center;gap:5px;color:var(--mut);margin-left:auto}.cmfleet svg{width:18px;height:18px;color:var(--gold)}.cmfleet b{color:var(--parch,#efe3c4);font-size:20px}
@@ -676,7 +676,16 @@ body.combat .pwr{margin-bottom:2px}
 .cmapb{margin-left:8px;padding:2px 8px;font-size:13px}
 .lmode{font-size:15px;color:var(--mut);margin:0 0 6px}
 .lobby .mbtns{margin-top:14px}
-@media (max-width:700px){.cnode{width:36px;height:36px}.cnode svg{width:19px;height:19px}.cnode.t-boss{width:48px;height:48px}.cmhead h2{font-size:30px}}
+@media (max-width:700px){.cbossn{display:none}.cnode{width:36px;height:36px}.cnode svg{width:19px;height:19px}.cnode.t-boss{width:48px;height:48px}.cmhead h2{font-size:30px}}
+
+.cstep{font-size:13px;color:var(--mut);margin-left:6px}
+.mhp small{font-size:.55em;color:var(--mut);margin-left:1px}
+.cbossn{position:absolute;bottom:calc(50% - 62px);transform:translateX(-50%);font-family:var(--disp);color:var(--gold);font-size:17px;white-space:nowrap;text-shadow:0 1px 3px #000}
+.cacts{display:flex;gap:6px;margin:8px 0 10px;flex-wrap:wrap}
+.cacts span{flex:1;min-width:140px;background:#0b1520;border:1px solid rgba(224,176,79,.25);padding:6px 10px;display:flex;flex-direction:column;font-size:14px;color:var(--mut)}
+.cacts span b{color:var(--parch,#efe3c4);font-size:15px}.cacts small{color:var(--gold)}
+.cacts span.ok{border-color:#5d8a4a;color:#9fd18a}.cacts span.cur{border-color:#b9473a;color:#e98a7d}
+.orow .lships{display:flex;flex-wrap:wrap;gap:4px}
 </style>
 </head>
 <body>
@@ -2436,7 +2445,7 @@ function dockHTML(){
     return `<div class="bdock"><div class="wrow">${ws}</div>${grap}${B.coop?coopSigHTML():B.net?'<div class="spd"><span class="hint">Duel en direct</span></div>':`<div class="spd">${[1,2,4].map(v=>`<button class="btn sm${B.speed===v?' on':''}" data-act="speed" data-v="${v}">x${v}</button>`).join('')}<button class="btn sm" data-act="skip">Conclure</button></div>`}</div>`;
   }
   const viewing=G.view!==null;
-  const bench=S.bench.map((uid,i)=>`<div class="bslot" data-bench="${i}">${uid!==null?`<div class="btok${S.sel===uid?' sel':''}${S.mergeFx===uid&&Date.now()-S.mergeT<1200?' mfx':''}" data-uid="${uid}" data-tip="u:${S.units[uid].k}:${S.units[uid].s}:${uid}">${portrait(S.units[uid].k,S.units[uid].s)}${(S.units[uid].items||[]).length?`<span class="bitm">${S.units[uid].items.map(x=>itemIcon(x)).join('')}</span>`:''}</div>`:''}</div>`).join('');
+  const bench=S.bench.map((uid,i)=>`<div class="bslot" data-bench="${i}">${uid!==null?`<div class="btok${S.sel===uid?' sel':''}${S.mergeFx===uid&&Date.now()-S.mergeT<1200?' mfx':''}" data-uid="${uid}" data-tip="u:${S.units[uid].k}:${S.units[uid].s}:${uid}">${portrait(S.units[uid].k,S.units[uid].s,'',true)}${(S.units[uid].items||[]).length?`<span class="bitm">${S.units[uid].items.map(x=>itemIcon(x)).join('')}</span>`:''}</div>`:''}</div>`).join('');
   const chest=`<div class="chest"><span class="chl">Coffre</span>${Array.from({length:8},(_,i)=>S.items[i]?`<button class="itb${S.selItem===i?' sel':''}" data-item="${i}" data-tip="i:${S.items[i]}">${itemIcon(S.items[i])}</button>`:'<span class="itb empty"></span>').join('')}</div>`;
   const shop=S.shop.map((k,i)=>{
     if(!k)return '<div class="card sold"></div>';
@@ -2934,7 +2943,7 @@ const LIVE_Q=new URLSearchParams(location.search).get('fb');
 function liveBase(){return (LIVE_Q||tourBase()).replace(/\/+$/,'')+'/bordee_live';}
 function fbUrl(path){return liveBase()+'/'+path+'.json';}
 const fbSendQ={};
-function fbReq(method,path,data){return fetch(fbUrl(path),method==='GET'?{}:{method,body:JSON.stringify(data)}).then(r=>r.ok?r.json():Promise.reject(r.status));}
+function fbReq(method,path,data){if(NET&&NET.local)return lReq(method,path,data);return fetch(fbUrl(path),method==='GET'?{}:{method,body:JSON.stringify(data)}).then(r=>r.ok?r.json():Promise.reject(r.status));}
 function fbPut(path,data){return fbReq('PUT',path,data).catch(()=>null);}
 function fbPatch(path,data){return fbReq('PATCH',path,data).catch(()=>null);}
 function fbGet(path){return fbReq('GET',path).catch(()=>null);}
@@ -2944,6 +2953,7 @@ function setAt(obj,parts,val){if(!parts.length)return val;let o=obj&&typeof obj=
   for(let i=0;i<parts.length-1;i++){if(!o[parts[i]]||typeof o[parts[i]]!=='object')o[parts[i]]={};o=o[parts[i]];}
   const k=parts[parts.length-1];if(val===null)delete o[k];else o[k]=val;return root;}
 function fbListen(path,cb){
+  if(NET&&NET.local)return lListen(path,cb);
   const st={data:null,es:null,closed:false};
   const open=()=>{
     if(st.closed)return;
@@ -2964,19 +2974,20 @@ function fbListen(path,cb){
 let NET=null;
 function snow(){return Date.now()+(NET?NET.off:0);}
 async function syncClock(pid){
+  if(NET&&NET.local)return;
   const t0=Date.now();await fbPut('clock/'+pid,{'.sv':'timestamp'});const v=await fbGet('clock/'+pid);const t1=Date.now();
   if(typeof v==='number')NET.off=v-(t0+t1)/2;
 }
 function roomCode(){const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let s='';for(let i=0;i<4;i++)s+=L[Math.floor(Math.random()*L.length)];return s;}
 function newPid(){return 'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
 /* ----- salon ----- */
-async function netCreate(){
+async function netCreate(mode){
   const name=(($('#nname')&&$('#nname').value)||'').trim().slice(0,16);if(!name)return toast('Indique ton pseudo');
   OPT.netName=name;saveOpt();
   const room=roomCode(),pid=newPid();
   NET={room,pid,name,host:true,off:0,meta:null,players:{},rd:{}};
   await syncClock(pid);
-  const ok=await fbPut('rooms/'+room+'/g',{meta:{host:pid,state:'lobby',created:{'.sv':'timestamp'},fill:true},players:{[pid]:{name,ship:OPT.ship||'galion',order:0,seen:snow()}}});
+  const ok=await fbPut('rooms/'+room+'/g',{meta:{host:pid,state:'lobby',created:{'.sv':'timestamp'},fill:true,mode:mode==='coop'?'coop':'br',cdiff:OPT.cdiff||'matelot'},players:{[pid]:{name,ship:OPT.ship||'galion',order:0,seen:snow()}}});
   if(ok===null){NET=null;return toast('Connexion à la base impossible');}
   lsSet(NET_KEY,{room,pid,name});netJoined();
 }
@@ -3015,9 +3026,9 @@ async function netRejoin(room,name,g){
 /* sauvegarde locale de l'état du joueur, pour pouvoir revenir */
 let netSaveT=0;
 function netSave(force){
-  if(!NET||!G||!G.net||!S||!S.units||G.phase==='end')return;
+  if(!NET||NET.local||!G||!G.net||!S||!S.units||G.phase==='end')return;
   const now=Date.now();if(!force&&now-netSaveT<1500)return;netSaveT=now;
-  const keep=['units','place','bench','gold','xp','level','arms','augs','items','reactorUp','sysUp','alloc','stats'];
+  const keep=['units','place','bench','gold','xp','level','arms','augs','items','reactorUp','sysUp','alloc','stats','avarie'];
   const st={};for(const k of keep)st[k]=S[k];
   lsSet(NET_KEY,{room:NET.room,pid:NET.pid,name:NET.name,round:G.round,S:st,done:NET.done,UID});
 }
@@ -3050,7 +3061,7 @@ function netJoined(){
   NET.beat=setInterval(()=>{if(NET){fbPatch('rooms/'+NET.room+'/g/players/'+NET.pid,{seen:snow()});if(G&&G.net&&G.phase==='plan')netSave();if(NET.meta&&NET.meta.state==='game')netHostCheck();}},4000);
   NET.dir=setInterval(()=>{if(NET&&NET.host)hostTick();},300);
   NET.bg=setInterval(()=>{if(document.hidden&&B&&B.net&&!B.over)netStep();},400);
-  openScreen('lobby');
+  if(NET.local)hideScreen();else openScreen('lobby');
 }
 function netLeave(){
   if(!NET)return;
@@ -3063,11 +3074,12 @@ function lobbyHTML(){
   if(!NET)return'';
   const ps=livePlayers(),host=NET.meta&&NET.meta.host===NET.pid;
   const me=NET.players[NET.pid]||{},coop=!!(NET.meta&&NET.meta.mode==='coop'),cap=coop?COOP_MAX:8;
-  const modeRow=host?`<div class="orow"><span>Mode de jeu</span><span class="seg"><button class="${coop?'':'on'}" data-act="netmode" data-v="br">Bataille royale</button><button class="${coop?'on':''}" data-act="netmode" data-v="coop">Expédition coop</button></span></div>`:'';
+  const cd=(NET.meta&&NET.meta.cdiff)||'matelot';
+  const modeRow=coop?(host?`<div class="orow"><span>Difficulté</span><span class="seg">${Object.entries(CDIF).map(([k,d])=>`<button class="${cd===k?'on':''}" data-act="netcdiff" data-v="${k}">${d.n}</button>`).join('')}</span></div>`:`<div class="orow"><span>Difficulté</span><b>${CDIF[cd].n}</b></div>`):'';
   const fillRow=host&&!coop?`<div class="orow"><span>Compléter avec des capitaines IA jusqu’à 8</span><span class="seg"><button class="${NET.meta.fill!==false?'on':''}" data-act="netfill" data-v="1">Oui</button><button class="${NET.meta.fill===false?'on':''}" data-act="netfill" data-v="0">Non</button></span></div>`:'';
   const can=coop?ps.length>=1&&ps.length<=COOP_MAX:ps.length>=((NET.meta||{}).fill===false?2:1);
   return `<div class="lobby"><div class="lcode"><small>Code du salon</small><b>${NET.room}</b><span class="hint">Les autres joueurs le saisissent dans « Rejoindre ».</span></div>
-    ${modeRow}<p class="lmode">${coop?'Expédition coop : 1 à 3 capitaines, une carte commune, une coque de flotte partagée, deux vaisseaux amiraux à abattre ensemble.':'Bataille royale : jusqu’à 8 capitaines, le dernier à flot gagne.'}</p>
+    ${modeRow}<p class="lmode">${coop?'Expédition coop : 2 ou 3 capitaines, trois mers et trois boss. Une seule défaite et l’expédition s’arrête.':'Bataille royale : jusqu’à 8 capitaines, le dernier à flot gagne.'}</p>
     <h4>Capitaines (${ps.length} / ${cap})</h4><div class="lplayers">${ps.map(p=>`<div class="lp${p.pid===NET.pid?' me':''}" style="--c:${CAPCOL[p.order%8]}"><b>${p.name}</b><span>${SHIPS[p.ship]?SHIPS[p.ship].n:''}</span>${NET.meta&&NET.meta.host===p.pid?'<em>hôte</em>':''}</div>`).join('')}</div>
     <h4>Ton navire</h4><div class="lships">${Object.values(SHIPS).map(sh=>`<button class="mini${me.ship===sh.k?' on':''}" data-act="netship" data-v="${sh.k}">${sh.n}</button>`).join('')}</div>
     ${fillRow}
@@ -3079,7 +3091,7 @@ function netOnData(d){
   NET.meta=d.meta||{};NET.players=d.players||{};NET.rd=d.rd||{};if(d.map)NET.map=d.map;
   if(NET.meta.state==='lobby'){if(SCR.name==='lobby')renderScreen();return;}
   if(NET.meta.state==='game'||NET.meta.state==='done'){
-    if(!G||!G.net)netStartGame();
+    if(!G||!G.net||G.netRef!==NET)netStartGame();
     netHostCheck();
     netSync();
   }
@@ -3089,7 +3101,7 @@ function netStartGame(){
   hideScreen();document.body.classList.remove('menu');document.getElementById('menu').classList.remove('sel');
   const ps=Object.entries(NET.players||{}).map(([k,v])=>Object.assign({pid:k},v)).sort((a,b)=>a.order-b.order),me=ps.find(p=>p.pid===NET.pid)||{ship:'galion'};
   newGame(me.ship);
-  G.net=true;G.round=0;G.phase='wait';
+  G.net=true;G.netRef=NET;G.round=0;G.phase='wait';
   const caps=[S];delete S.roster;S.pid=NET.pid;S.name=NET.name;S.short=NET.name;S.color=CAPCOL[(me.order||0)%8];
   Object.assign(S,{integ:100,alive:true,rank:0,streak:0,lastDmg:0});
   for(const p of ps){if(p.pid===NET.pid)continue;
@@ -3382,15 +3394,29 @@ async function hostResolve(r){
   for(const c of G.caps){const u=upd[c.pid||NET.pid];if(u){c.alive=u.alive;c.integ=u.integ;c.streak=u.streak;}}
   await hostRound(r+1);
 }
-/* ================= expédition coopérative : roguelike à 2 ou 3 capitaines ================= */
-const COOP_STEPS=16,COOP_AUG=[3,8,12],COOP_MAX=3;
+/* ================= expédition : roguelike en solo ou en coop (1 à 3 capitaines) ================= */
+const COOP_MAX=3,ACT_COLS=7,COOP_AUG=[3,10,17];
+const ACTS=[
+  {n:'Mer d’Iroise',tint:'#163449',boss:{name:'Le Léviathan',ship:'colosse',d:'Un vaisseau de ligne à la coque monstrueuse.'},
+    foes:[['Marchand armé','caravelle'],['Corsaire du Ponant','fregate'],['Garde-côtes','galion']],seas:[null,null,null,'vent','calme']},
+  {n:'Archipel des Brumes',tint:'#22293f',boss:{name:'La Veuve des Brumes',ship:'requin',d:'Un équipage d’abordeurs, rapide et cruel.'},
+    foes:[['Pirates des Brumes','requin'],['Boucaniers','fregate'],['Naufrageurs','caravelle']],seas:['brume','brume','nuit',null]},
+  {n:'Détroit de la Couronne',tint:'#2f2430',boss:{name:'L’Amiral de la Couronne',ship:'colosse',d:'Le vaisseau amiral, quatre batteries et l’élite de la flotte.'},
+    foes:[['Frégate royale','fregate'],['Vaisseau de ligne','galion'],['Escadre royale','colosse']],seas:['tempete','vent',null,'nuit']}
+];
+const CDIF={
+  mousse:{n:'Mousse',d:'Pour découvrir : ennemis affaiblis, réparations généreuses.',e:-2,h:.75,gold:2,heal:.3,sg:6},
+  matelot:{n:'Matelot',d:'L’expérience prévue.',e:0,h:.9,gold:1,heal:.2,sg:3},
+  capitaine:{n:'Capitaine',d:'Ennemis plus robustes, peu de réparations.',e:1,h:1.05,gold:0,heal:.12,sg:0},
+  amiral:{n:'Amiral',d:'Pour les vieux loups de mer.',e:2,h:1.15,gold:0,heal:.06,sg:0}
+};
 const CN={
-  combat:{n:'Combat',d:'Un navire de la Couronne barre la route.'},
-  elite:{n:'Élite',d:'Un chasseur de primes. Butin d’artillerie.'},
-  port:{n:'Port franc',d:'La flotte se répare. Une escale au choix.'},
+  combat:{n:'Combat',d:'Un navire ennemi barre la route.'},
+  elite:{n:'Élite',d:'Un adversaire redoutable. Butin d’artillerie.'},
+  port:{n:'Port franc',d:'Réparations et une escale au choix.'},
   event:{n:'Rencontre',d:'Un événement en mer, chacun décide pour son navire.'},
   tresor:{n:'Trésor',d:'De l’or et un objet pour chaque capitaine.'},
-  boss:{n:'Vaisseau amiral',d:'Une seule coque pour toute la flotte : frappez ensemble.'}
+  boss:{n:'Boss',d:'Le maître de ces eaux. Une seule coque pour toute la flotte.'}
 };
 const CICON={
   combat:'<path d="M4 4l12 12M16 4L4 16M3 13l4 4M13 17l4-4" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round"/>',
@@ -3403,31 +3429,54 @@ const CICON={
 function cIcon(t){return `<svg viewBox="0 0 20 20" aria-hidden="true">${CICON[t]||''}</svg>`;}
 function cIsFight(t){return t==='combat'||t==='elite'||t==='boss';}
 function cPath(p){return 'rooms/'+NET.room+'/g/'+p;}
-function cNK(M){return 's'+(M.step||0)+'_'+(M.rep||0);}
+function cNK(M){return 's'+(M.step||0)+'_0';}
+function cDif(){return CDIF[(NET&&NET.meta&&NET.meta.cdiff)||'matelot']||CDIF.matelot;}
+function cAct(k){return Math.min(ACTS.length-1,Math.floor(Math.max(0,k)/ACT_COLS));}
+function cSteps(){return (NET&&NET.map?NET.map.length:ACTS.length*ACT_COLS);}
 function cHumans(){const now=snow();return Object.entries(NET.players||{}).filter(([k,p])=>!p.ai&&now-(p.seen||0)<12000).map(([k])=>k);}
 function cUnit(t){let pool=UNITS.filter(u=>u.t===t);if(!pool.length)pool=UNITS.filter(u=>u.t<=3);return rnd(pool).k;}
-function cTier(){const st=(NET.meta&&NET.meta.step)||1;return st<5?2:st<11?3:rnd([3,3,4].filter(t=>UNITS.some(u=>u.t===t)));}
+function cTier(){const k=NET.meta&&NET.meta.pos?NET.meta.pos.k:0;return k<6?2:k<13?3:rnd([3,3,4].filter(t=>UNITS.some(u=>u.t===t)));}
 
-/* ----- carte ----- */
-function coopGenMap(){
+/* ----- base locale (partie en solo, sans connexion) ----- */
+let LDB=null,LLIS=[],LEMIT=0;
+function lClone(v){return v==null?null:JSON.parse(JSON.stringify(v));}
+function lGet(path){return path.split('/').filter(Boolean).reduce((o,k)=>o==null?null:o[k],LDB);}
+function lSv(v){if(v&&typeof v==='object'){if(v['.sv']==='timestamp')return Date.now();if(Array.isArray(v))return v.map(lSv);const o={};for(const k in v)o[k]=lSv(v[k]);return o;}return v;}
+function lEmit(){if(LEMIT)return;LEMIT=setTimeout(()=>{LEMIT=0;for(const l of LLIS.slice())if(!l.closed)l.cb(lClone(lGet(l.path)));},0);}
+function lReq(method,path,data){
+  const parts=path.split('/').filter(Boolean);
+  if(method==='GET')return Promise.resolve(lClone(lGet(path)));
+  if(method==='PUT')LDB=setAt(LDB,parts,lSv(lClone(data)));
+  else for(const [k,v] of Object.entries(data||{}))LDB=setAt(LDB,parts.concat(k.split('/').filter(Boolean)),lSv(lClone(v)));
+  lEmit();return Promise.resolve(data);
+}
+function lListen(path,cb){const st={path,cb,closed:false,close(){st.closed=true;LLIS=LLIS.filter(x=>x!==st);}};LLIS.push(st);lEmit();return st;}
+
+/* ----- carte : trois mers de 7 colonnes, la dernière est le boss ----- */
+function coopGenAct(){
   const map=[];
-  for(let a=0;a<2;a++)for(let c=0;c<8;c++){
+  for(let c=0;c<ACT_COLS;c++){
     let col;
-    if(c===7)col=[{t:'boss'}];
+    if(c===ACT_COLS-1)col=[{t:'boss'}];
     else{
       const n=c===0?2+(Math.random()<.5?1:0):2+Math.floor(Math.random()*3);col=[];
       for(let i=0;i<n;i++){let t;
-        if(c===0)t=i===0||Math.random()<.6?'combat':'event';
-        else if(c===6)t=rnd(['port','port','tresor','event']);
-        else{const x=Math.random();t=x<.42?'combat':x<.58&&c>=2?'elite':x<.72?'event':x<.84?'port':x<.92?'tresor':'combat';}
+        if(c===0)t=i===0||Math.random()<.65?'combat':'event';
+        else if(c===ACT_COLS-2)t=rnd(['port','port','tresor','event']);
+        else{const x=Math.random();t=x<.42?'combat':x<.58&&c>=2?'elite':x<.73?'event':x<.85?'port':x<.93?'tresor':'combat';}
         col.push({t});}
-      if(c===6&&!col.some(o=>o.t==='port'))col[0].t='port';
-      if(c>=2&&c<=5&&!col.some(o=>cIsFight(o.t)))col[0].t='combat';
+      if(c===ACT_COLS-2&&!col.some(o=>o.t==='port'))col[0].t='port';
+      if(c>=1&&c<=ACT_COLS-3&&!col.some(o=>cIsFight(o.t)))col[0].t='combat';
     }
     map.push(col);
   }
+  return map;
+}
+function coopGenMap(){
+  const map=[];for(let a=0;a<ACTS.length;a++)map.push(...coopGenAct());
   for(let k=0;k<map.length-1;k++){
     const A=map[k],N=map[k+1],n=A.length,m=N.length;
+    if(A.length===1&&A[0].t==='boss'){A[0].l=N.map((o,j)=>j);continue;}
     A.forEach((o,i)=>{const y=(i+.5)/n,j=Math.min(m-1,Math.floor(y*m));o.l=[j];
       if(m>1&&Math.random()<.45){const j2=j+(Math.random()<.5?-1:1);if(j2>=0&&j2<m)o.l.push(j2);}});
     for(let j=0;j<m;j++)if(!A.some(o=>o.l.includes(j))){let best=0,bd=9;A.forEach((o,i)=>{const d=Math.abs((i+.5)/n-(j+.5)/m);if(d<bd){bd=d;best=i;}});A[best].l.push(j);}
@@ -3443,71 +3492,63 @@ function cReach(M){
 
 /* ----- ennemis ----- */
 function cBoard(r,o){
-  const n=Math.min(8,2+Math.floor(r/3)+(o.extra||0));
+  const n=Math.max(2,Math.min(8,2+Math.floor(r/3)+(o.extra||0)));
   const tiers=r<5?[1]:r<12?[1,1,2]:r<20?[1,2,2,3]:r<28?[2,3,3]:[3,3,3,4];
   const units=[];
   for(let i=0;i<n;i++){const k=cUnit(rnd(tiers));
     units.push({uid:UID++,k,s:r>=26?(Math.random()<.35?3:2):r>=18?2:r>=10&&Math.random()<.5?2:1,items:i<(o.items||0)?[randItem()]:[]});}
   const pool=['couleuv','canon12','batt8','rouges','mitraille','rames','mortier'];
-  const weapons=['couleuv'],nw=o.w||Math.min(4,1+Math.floor(r/6));
+  const weapons=['couleuv'],nw=o.w||Math.max(1,Math.min(4,1+Math.floor(r/6)));
   for(let i=1;i<nw;i++)weapons.push(rnd(pool));
-  const ship=o.ship;
-  return{name:o.name,color:'#c9c3b5',ship,units:assignStations(units,SHIPS[ship]),weapons:weapons.map(k=>({k,target:'auto'})),augs:[],hull:o.hull||Math.round(r<=2?16+r*2:24+r*1.2)};
+  return{name:o.name,color:'#c9c3b5',ship:o.ship,units:assignStations(units,SHIPS[o.ship]),weapons:weapons.map(k=>({k,target:'auto'})),augs:[],hull:Math.round(o.hull||(r<=2?16+r*2:24+r*1.2))};
 }
-function coopEnemy(step,t,n){
-  const r=Math.round(1+step*1.5);
-  if(t==='combat')return cBoard(r,{name:step<=4?'Marchand armé':step<=10?'Garde-côtes de la Couronne':'Frégate de la Couronne',ship:step<=3?'caravelle':step<=10?'galion':'fregate'});
-  if(t==='elite')return cBoard(r+3,{name:'Chasseur de primes',ship:'requin',extra:1,items:2,hull:Math.round((24+(r+3)*1.2)*1.2)});
-  const fin=step>=COOP_STEPS,base=fin?90:50;
-  return cBoard(r+(fin?5:4),{name:fin?'Amiral de la Couronne':'Le Léviathan',ship:'colosse',extra:fin?2:1,items:fin?6:2,w:fin?4:3,hull:Math.round(base*(.35+.65*Math.max(1,n)))});
+const CT={b:1,s:.8,er:2,eh:1.05,br:1,bh:.75};
+function coopEnemy(k,t,n,dif){
+  const a=cAct(k),A=ACTS[a],r=Math.max(1,Math.round(CT.b+k*CT.s)+dif.e);
+  if(t==='combat'){const [name,ship]=A.foes[Math.min(A.foes.length-1,Math.floor((k%ACT_COLS)/2))];
+    return cBoard(r,{name,ship,hull:(r<=2?16+r*2:24+r*1.2)*dif.h});}
+  if(t==='elite'){const ship=rnd(['requin','fregate','galion']);
+    return cBoard(r+CT.er,{name:['Chasseur de primes','Capitaine Mordrac','La Main Noire'][a],ship,extra:1,items:1+a,hull:(24+(r+CT.er)*1.2)*CT.eh*dif.h});}
+  const B=A.boss,base=[55,80,105][a]*CT.bh,mult=(.35+.65*Math.max(1,n))*dif.h;
+  const spec=[{extra:1,items:2,w:3,hull:base*1.25},{extra:2,items:3,w:3,hull:base*.9},{extra:2,items:6,w:4,hull:base}][a];
+  return cBoard(r+CT.br,{name:B.name,ship:B.ship,extra:spec.extra,items:spec.items,w:spec.w,hull:spec.hull*mult});
 }
 
-/* ----- hôte (sans état local : tout est lu dans la base, donc transmissible) ----- */
+/* ----- hôte : l'état vit dans la base, donc un autre joueur peut reprendre ----- */
 async function coopHostStart(){
   const ps=livePlayers().filter(p=>!p.ai).slice(0,COOP_MAX),upd={};
   for(const p of ps)upd[p.pid]=Object.assign({},NET.players[p.pid],{integ:100,alive:true,rank:0,streak:0,lastDmg:0,ready:false});
   await fbPut(cPath('players'),upd);
-  await fbPut(cPath('map'),coopGenMap());
-  await fbPatch(cPath('meta'),{state:'game',mode:'coop',seed:Math.floor(Math.random()*1e9),step:0,round:0,phase:'init',fleet:100,rep:0});
+  NET.map=coopGenMap();
+  await fbPut(cPath('map'),NET.map);
+  await fbPatch(cPath('meta'),{state:'game',mode:'coop',seed:Math.floor(Math.random()*1e9),step:0,round:0,phase:'init',rep:0});
 }
 async function coopGoMap(){
   const upd={};for(const k of Object.keys(NET.players||{}))upd[k+'/vote']=null;
   await fbPatch(cPath('players'),upd);
-  const opts=cReach(NET.meta);
-  await fbPatch(cPath('meta'),{phase:'map',end:snow()+(opts.length>1?25000:5000)});
+  const opts=cReach(NET.meta),solo=cHumans().length<=1;
+  await fbPatch(cPath('meta'),{phase:'map',end:snow()+(solo?600000:opts.length>1?25000:6000)});
 }
-async function coopEnter(v,rep,hull){
+async function coopEnter(v){
   const M=NET.meta,[k,i]=v.split('_').map(Number),node=cNode(k,i);if(!node)return;
-  const t=node.t,step=k+1;rep=rep||0;
-  if(cIsFight(t)){const en=coopEnemy(step,t,cHumans().length);if(hull)en.pre=Math.max(0,en.hull-hull);await fbPut(cPath('rd/s'+step+'_'+rep+'/enemy'),en);}
+  const t=node.t,step=k+1,a=cAct(k),dif=cDif();
+  const seaP=t==='boss'?.6:.45,sea=Math.random()<seaP?rnd(ACTS[a].seas):null;
+  if(cIsFight(t))await fbPut(cPath('rd/s'+step+'_0/enemy'),coopEnemy(k,t,cHumans().length,dif));
   const upd={};for(const p of Object.keys(NET.players||{})){upd[p+'/ready']=false;upd[p+'/vote']=null;}
   await fbPatch(cPath('players'),upd);
   const extra=(t==='event'||t==='port'||t==='tresor'?8000:0)+(COOP_AUG.includes(step)?10000:0);
-  await fbPatch(cPath('meta'),{pos:{k,i},step,round:step,node:t,rep,ev:t==='event'?rnd(Object.keys(CEV)):null,
-    trail:rep?(M.trail||''):(M.trail?M.trail+',':'')+v,phase:'plan',end:snow()+(OPT.plan||60)*1000+extra});
+  const solo=cHumans().length<=1;
+  await fbPatch(cPath('meta'),{pos:{k,i},step,round:step,node:t,rep:0,sea:cIsFight(t)?sea:null,ev:t==='event'?rnd(Object.keys(CEV)):null,
+    trail:(M.trail?M.trail+',':'')+v,phase:'plan',end:snow()+(solo&&!OPT.plan?3600000:(OPT.plan||60)*1000+extra)});
 }
 async function coopResolve(){
-  const M=NET.meta,NK=cNK(M),rd=NET.rd[NK]||{},res=rd.res||{},fx=rd.fx||{},hs=cHumans(),t=M.node,step=M.step||1;
-  let fleet=M.fleet??100,lost=0;
-  if(cIsFight(t)){const base=t==='boss'?6:t==='elite'?5:3;
-    for(const k of Object.keys(NET.players||{})){const x=res[k];if(!x&&!hs.includes(k))continue;
-      if(!x||!x.win)lost+=base+Math.floor(step/2)+Math.min(4,x?x.alive||0:2);}}
-  const won=Object.values(res).some(x=>x&&x.win),np=Math.max(1,Object.keys(NET.players||{}).length);
-  lost=Math.round(lost*2/(np+1)*(t==='boss'&&won?.5:1));
-  for(const v of Object.values(fx))fleet+=(+v||0);
-  if(t==='port')fleet+=12;
-  fleet=Math.min(100,fleet-lost);
-  const pu={};for(const k of Object.keys(NET.players||{})){pu[k+'/integ']=Math.max(0,fleet);pu[k+'/lastDmg']=lost;}
-  await fbPatch(cPath('players'),pu);
-  const last=M.pos&&M.pos.k===(NET.map.length-1);
-  if(fleet<=0){await fbPatch(cPath('meta'),{fleet:0,lastLoss:lost,state:'done',phase:'end',result:'lose'});return coopCleanup();}
-  if(t==='boss'&&!won){const e=rd.enemy||{},H=e.hull||60,start=H-(e.pre||0),dealt=Object.values(rd.boss||{}).reduce((a,v)=>a+(+v||0),0),left=Math.min(H,Math.max(Math.round(H*.25),Math.round(start-dealt+H*.15)));
-    await fbPatch(cPath('meta'),{fleet,lastLoss:lost});return coopEnter(M.pos.k+'_'+M.pos.i,(M.rep||0)+1,left);}
-  if(t==='boss'&&last){await fbPatch(cPath('meta'),{fleet,lastLoss:lost,state:'done',phase:'end',result:'win'});return coopCleanup();}
-  await fbPatch(cPath('meta'),{fleet,lastLoss:lost});
+  const M=NET.meta,res=(NET.rd[cNK(M)]||{}).res||{},t=M.node;
+  const lost=cIsFight(t)&&Object.values(res).some(x=>x&&x.win===false);
+  if(lost){await fbPatch(cPath('meta'),{state:'done',phase:'end',result:'lose'});return coopCleanup();}
+  if(t==='boss'&&M.pos&&M.pos.k>=cSteps()-1){await fbPatch(cPath('meta'),{state:'done',phase:'end',result:'win'});return coopCleanup();}
   await coopGoMap();
 }
-function coopCleanup(){const room=NET.room;setTimeout(()=>fbPut('rooms/'+room,null),120000);}
+function coopCleanup(){if(NET.local)return;const room=NET.room;setTimeout(()=>fbPut('rooms/'+room,null),120000);}
 async function coopHostTick(){
   const M=NET.meta;if(!M||M.state!=='game'||NET.hostBusy||!NET.map)return;
   NET.hostBusy=true;
@@ -3522,48 +3563,58 @@ async function coopHostTick(){
         await coopEnter(top.length?rnd(top):rnd(opts));}
     }else if(M.phase==='plan'){
       if(now>=M.end||(hs.length&&hs.every(k=>(P[k]||{}).ready))){
-        if(cIsFight(M.node)){const start=snow()+1500;await fbPatch(cPath('meta'),{phase:'battle',start,end:start+(M.node==='boss'?170000:80000)});}
+        if(cIsFight(M.node)){const start=snow()+1500;await fbPatch(cPath('meta'),{phase:'battle',start,end:start+(M.node==='boss'?175000:115000)});}
         else await coopResolve();}
     }else if(M.phase==='battle'){
       const res=(NET.rd[cNK(M)]||{}).res||{};
-      if(now>=M.end||hs.every(k=>res[k]))await coopResolve();
+      if(now>=M.end||hs.every(k=>res[k])||Object.values(res).some(x=>x&&x.win===false))await coopResolve();
     }
   }finally{NET.hostBusy=false;}
 }
 
+/* ----- coque de chaque navire, conservée d'un combat à l'autre ----- */
+function cHullMax(){return B&&B.coop?B.A.hullMax:(PLAN&&PLAN.hullMax)||makeShip(humanBoard(),0).hullMax;}
+function cHullNow(){if(B&&B.coop)return Math.max(0,Math.ceil(B.A.hull));return Math.max(1,cHullMax()-(S.avarie||0));}
+function cHull(d){const mx=cHullMax();S.avarie=Math.max(0,Math.min(mx-1,(S.avarie||0)-d));cPub();}
+function cPct(p){return Math.max(1,Math.round(cHullMax()*p));}
+function cPub(){if(!NET||!G||!G.coop)return;const mx=cHullMax();fbPatch(cPath('players/'+NET.pid),{integ:Math.max(0,Math.round(100*cHullNow()/mx)),level:S.level});}
+
 /* ----- client ----- */
 function coopSync(){
-  const M=NET.meta,P=NET.players,fl=M.fleet??100;
-  for(const c of G.caps){const p=P[c.pid||NET.pid];c.integ=fl;c.alive=true;if(p&&!c.human&&p.level)c.level=p.level;}
-  S.integ=fl;S.alive=true;
+  const M=NET.meta,P=NET.players;
+  for(const c of G.caps){const p=P[c.pid||NET.pid];c.alive=true;if(p){if(!c.human)c.integ=p.integ??100;if(!c.human&&p.level)c.level=p.level;}}
+  S.alive=true;S.integ=Math.round(100*cHullNow()/Math.max(1,cHullMax()));
   for(const [r,rd] of Object.entries(NET.rd||{}))if(rd&&rd.boards)for(const [pid,b] of Object.entries(rd.boards)){const c=capByPid(pid);if(c&&!c.human)c.lastBoard=b;}
-  if(G.phase!=='end'&&M.state==='done'){G.phase='end';lsDel(NET_KEY);coopEndScreen(M.result==='win');return;}
-  const key=(M.step||0)+':'+M.phase+':'+(M.rep||0);
+  if(G.phase!=='end'&&M.state==='done'){G.phase='end';if(!NET.local)lsDel(NET_KEY);coopEndScreen(M.result==='win');return;}
+  const key=(M.step||0)+':'+M.phase;
   if(key!==NET.lastKey){NET.lastKey=key;coopPhase(M);}
   coopHelpCheck();
   cmapRender();
   if(!B&&G.phase!=='end')render();
 }
 function coopPhase(M){
-  const step=M.step||0,tag=step+'_'+(M.rep||0);
+  const step=M.step||0,tag=String(step);
   if(M.phase==='map'||M.phase==='init'){
     if(B){B=null;hideSplash();}
     G.phase='wait';render();cmapOpen(true);
-    const ll=M.lastLoss;if(ll)setTimeout(()=>banner('La flotte perd '+ll+' points de coque'),300);
+    if(M.pos&&M.node==='boss'&&!NET.done['bossw'+step]){NET.done['bossw'+step]=1;
+      const a=cAct(M.pos.k);cHull(cPct(.5));setTimeout(()=>banner(ACTS[a].boss.name+' est par le fond. Cap sur '+(ACTS[a+1]?ACTS[a+1].n:'la victoire')+'.'),300);}
     return;
   }
   cmapOpen(false);
   if(M.phase==='plan'){
     if(B){B=null;hideSplash();}
     $('#modal').classList.remove('on');
+    const dif=cDif();
+    if(!NET.done.start){NET.done.start=1;if(dif.sg){S.gold+=dif.sg;}}
     if(step>1&&!NET.done['inc'+tag]){NET.done['inc'+tag]=1;
-      const fx=boardFx(humanBoard()),it=interestOf(S.gold,S),inc=5+it+fx.gold;
+      const fx=boardFx(humanBoard()),it=interestOf(S.gold,S),inc=5+it+fx.gold+dif.gold;
       S.gold+=inc;addXp(S,2);sfx('gold');setTimeout(()=>flyGold(inc),50);toast('+'+inc+' or');}
-    G.round=step;G.phase='plan';G.view=null;G.myNext=null;G.pairs=null;G.sea=null;
+    G.round=step;G.phase='plan';G.view=null;G.myNext=null;G.pairs=null;G.sea=M.sea||null;
     rollShop();rollArmory();
-    fbPatch(cPath('players/'+NET.pid),{level:S.level});
-    render();
-    banner(CN[M.node].n+(M.rep?' : nouvel assaut':'')+'. '+CN[M.node].d);
+    render();cPub();
+    const nd=M.node==='boss'?ACTS[cAct(M.pos.k)].boss.name+'. '+ACTS[cAct(M.pos.k)].boss.d:CN[M.node].n+'. '+CN[M.node].d;
+    banner(nd+(G.sea?' Mer : '+SEAS[G.sea].n+'.':''));
     const aug=COOP_AUG.includes(step)&&!NET.done['aug'+step];if(aug)NET.done['aug'+step]=1;
     const next=aug?()=>augmentChoice(false):null;
     if(!NET.done['node'+tag]){NET.done['node'+tag]=1;setTimeout(()=>coopNodeModal(M,next),700);}
@@ -3573,42 +3624,45 @@ function coopPhase(M){
     if(cIsFight(M.node))coopBattle(M);
   }
 }
-/* effet sur la coque commune de la flotte */
-function cFleet(d){
-  const NK=cNK(NET.meta),key='fx'+NK;NET.done[key]=(NET.done[key]||0)+d;
-  fbPut(cPath('rd/'+NK+'/fx/'+NET.pid),NET.done[key]);
-}
 const CEV={
   epave:{n:'Épave à la dérive',d:'Une coque éventrée flotte, les cales encore pleines.',o:[
-    {l:'Fouiller les cales',f:()=>Math.random()<.6?giveItem(randItem()):(cFleet(-4),'Un pont s’effondre : la flotte perd 4 points')},
-    {l:'Récupérer le bois',f:()=>{cFleet(3);return 'La flotte répare 3 points';}}]},
+    {l:'Fouiller les cales',f:()=>{if(Math.random()<.6)return giveItem(randItem());const d=cPct(.12);cHull(-d);return 'Un pont s’effondre : -'+d+' coque';}},
+    {l:'Récupérer le bois',f:()=>{const d=cPct(.15);cHull(d);return '+'+d+' coque';}}]},
   marchand:{n:'Marchand levantin',d:'Il vend ses services contre de l’or.',o:[
     {l:'Mercenaire (5 or)',dis:()=>S.gold<5,f:()=>{S.gold-=5;const k=cUnit(cTier());giveOrRefund(k);return UD[k].n+' rejoint ton bord';}},
     {l:'Canon (4 or)',dis:()=>S.gold<4,f:()=>{S.gold-=4;return addWeapon(rnd(Object.keys(WEAPONS)));}},
     {l:'Passer',f:()=>''}]},
   grain:{n:'Grain violent',d:'Le ciel noircit, la houle se creuse.',o:[
-    {l:'Tenir le cap',f:()=>{cFleet(-3);addXp(S,4);return 'La flotte perd 3 points, ton équipage gagne 4 XP';}},
+    {l:'Tenir le cap',f:()=>{const d=cPct(.1);cHull(-d);addXp(S,4);return '-'+d+' coque, ton équipage gagne 4 XP';}},
     {l:'Jeter du fret (3 or)',dis:()=>S.gold<3,f:()=>{S.gold-=3;return 'Le grain passe sans dégâts';}}]},
   sirenes:{n:'Chant des sirènes',d:'Une voix attire tes marins vers les récifs.',o:[
-    {l:'Suivre la voix',f:()=>{if(Math.random()<.5){const k=cUnit(2);giveOrRefund(k);return UD[k].n+' surgit des flots';}cFleet(-5);return 'Les récifs : la flotte perd 5 points';}},
+    {l:'Suivre la voix',f:()=>{if(Math.random()<.5){const k=cUnit(2);giveOrRefund(k);return UD[k].n+' surgit des flots';}const d=cPct(.15);cHull(-d);return 'Les récifs : -'+d+' coque';}},
     {l:'Boucher les oreilles',f:()=>''}]},
   naufrages:{n:'Naufragés',d:'Des marins accrochés à un mât brisé.',o:[
-    {l:'Les recueillir',f:()=>{const k=cUnit(1);giveOrRefund(k);cFleet(2);return UD[k].n+' rejoint ton bord, la flotte répare 2 points';}},
+    {l:'Les recueillir',f:()=>{const k=cUnit(1);giveOrRefund(k);return UD[k].n+' rejoint ton bord';}},
     {l:'Prendre leur bourse',f:()=>{S.gold+=3;return '+3 or';}}]},
   contrebande:{n:'Contrebandiers',d:'Ils rachètent ce que la Couronne interdit.',o:[
     {l:'Vendre un objet (+6 or)',dis:()=>!S.items.length,f:()=>{S.items.splice(0,1);S.gold+=6;return '+6 or';}},
-    {l:'Les dénoncer',f:()=>{cFleet(4);return 'La Couronne paie les réparations : +4 flotte';}}]}
+    {l:'Les dénoncer',f:()=>{const d=cPct(.12);cHull(d);return 'La Couronne paie les réparations : +'+d+' coque';}}]},
+  chantier:{n:'Chantier clandestin',d:'Un charpentier propose de renforcer ta coque.',o:[
+    {l:'Radoub complet (6 or)',dis:()=>S.gold<6,f:()=>{S.gold-=6;S.avarie=0;cPub();return 'Coque remise à neuf';}},
+    {l:'Passer',f:()=>''}]},
+  mutins:{n:'Grogne à bord',d:'L’équipage réclame sa part du butin.',o:[
+    {l:'Payer (4 or)',dis:()=>S.gold<4,f:()=>{S.gold-=4;addXp(S,2);return 'L’équipage est content : +2 XP';}},
+    {l:'Tenir bon',f:()=>{const d=cPct(.08);cHull(-d);return 'Sabotage : -'+d+' coque';}}]}
 };
 function coopNodeModal(M,next){
   const done=msg=>{if(msg)toast(msg);render();if(next)next();};
   if(M.node==='event'&&CEV[M.ev]){const e=CEV[M.ev];
     modal(e.n,`<p class="hint">${e.d}</p>`,e.o.map(o=>({l:o.l,dis:o.dis?o.dis():false,f:()=>done(o.f())})));}
   else if(M.node==='port'){
-    modal('Port franc','<p class="hint">La flotte répare 12 points. Choisis ton escale.</p>',[
+    const d=cPct(.4);cHull(d);
+    modal('Port franc',`<p class="hint">Les charpentiers réparent ${d} points de coque. Choisis ton escale.</p>`,[
       {l:'Taverne : un marin',f:()=>{const k=cUnit(cTier());giveOrRefund(k);done(UD[k].n+' rejoint ton bord');}},
       {l:'Arsenal : une pièce',f:()=>{const opts=[0,1,2].map(()=>rnd(Object.keys(WEAPONS)));
         modal('Arsenal','<p class="hint">Choisis une pièce d’artillerie.</p>',opts.map(k=>({l:weaponCardHTML(k),cls:'loot',f:()=>done(addWeapon(k))})));}},
-      {l:'Forge : un objet',f:()=>done(giveItem(randItem()))}]);}
+      {l:'Forge : un objet',f:()=>done(giveItem(randItem()))},
+      {l:'Cale sèche : +20 % coque',f:()=>{const d2=cPct(.2);cHull(d2);done('+'+d2+' coque');}}]);}
   else if(M.node==='tresor'){
     modal('Trésor','<p class="hint">Un coffre pour chaque capitaine : 4 or et un objet.</p>',[{l:'Ouvrir le coffre',cls:'go',f:()=>{S.gold+=4;done(giveItem(randItem()));}}]);}
   else if(next)next();
@@ -3618,20 +3672,20 @@ function coopBattle(M){
   if(!en||(rd.res||{})[NET.pid]){G.phase='wait';render();return;}
   closeDrawer();G.drawer=false;S.sel=null;
   const bd=humanBoard();bd.name=NET.name;fbPut(cPath('rd/'+NK+'/boards/'+NET.pid),bd);
-  SR=Math.random;
+  SR=Math.random;G.sea=M.sea||null;
   B=makeBattle(remapBoard(bd,1000),remapBoard(en,2000),true);
+  B.A.hull=Math.max(1,B.A.hullMax-(S.avarie||0));
   const boss=M.node==='boss',n=G.caps.length;
-  if(en.pre)B.Bs.hull=Math.max(1,B.Bs.hullMax-en.pre);
-  B.manualA=true;B.speed=1;B.kind='pve';B.tmax=boss?150:60;
+  B.manualA=true;B.speed=1;B.kind='pve';B.tmax=boss?150:90;
   B.coop={nk:NK,node:M.node,boss,H:B.Bs.hull,oth:0,sig:1,sigT:0,dealt:-1,sent:0,seq:0};
   B.selW=null;B.intro=0;B.selC=[];B.hold=false;B.marks=[];
-  G.myOpp={name:en.name+(boss&&n>1?' (coque commune)':''),pve:true,color:'#c9c3b5'};
+  G.myOpp={name:en.name+(boss&&n>1?' (coque commune)':''),pve:true,color:boss?'#e0b04f':'#c9c3b5'};
   G.results=[];G.phase='battle';render();showVs();sfx('bell');
 }
 function coopTick(){
   if(!NET||!G||!G.coop)return;
   const M=NET.meta||{};
-  const mt=document.getElementById('cmt');if(mt&&M.phase==='map')mt.textContent=Math.max(0,Math.ceil(((M.end||0)-snow())/1000))+' s';
+  const mt=document.getElementById('cmt');if(mt&&M.phase==='map')mt.textContent=cHumans().length>1?Math.max(0,Math.ceil(((M.end||0)-snow())/1000))+' s':'';
   if(!B||!B.coop)return;
   const C=B.coop;
   if(!B.over&&!B.hold){C.sigT+=.4;if(C.sigT>=20){C.sigT=0;if(C.sig<2)C.sig++;}}
@@ -3674,41 +3728,58 @@ function coopHelpCheck(){
   }
 }
 function coopBattleOver(){
-  const win=B.winA,C=B.coop,st=(NET.meta&&NET.meta.step)||1,foes=aliveCount(B.Bs);
+  const C=B.coop,deadB=B.Bs.startCrew>0&&aliveCount(B.Bs)===0;
+  let win=B.winA;
+  if(C.boss&&B.Bs.hull>0&&!deadB)win=false;
+  if(B.A.hull<=0)win=false;
+  B.winA=win;
   if(S.stats){if(win)S.stats.wins++;else S.stats.losses++;}
   if(C.boss)fbPut(cPath('rd/'+C.nk+'/boss/'+NET.pid),Math.max(0,Math.round(C.H-B.Bs.hull-C.oth)));
-  fbPut(cPath('rd/'+C.nk+'/res/'+NET.pid),{win,alive:win?0:foes});
-  if(win){S.gold+=2;toast(giveItem(randItem()));if(C.boss){S.gold+=4;giveItem(randItem());}}
-  const base=C.node==='boss'?6:C.node==='elite'?5:3;
-  showResult(win,win?0:Math.round((base+Math.floor(st/2)+Math.min(4,foes))*2/(G.caps.length+1)),'pve');
+  if(win){S.avarie=Math.max(0,B.A.hullMax-Math.max(1,Math.ceil(B.A.hull)));
+    const d=Math.round(B.A.hullMax*cDif().heal);S.avarie=Math.max(0,S.avarie-d);
+    S.gold+=2+(C.node==='elite'?2:0);toast(giveItem(randItem()));if(C.boss){S.gold+=5;giveItem(randItem());}}
+  fbPut(cPath('rd/'+C.nk+'/res/'+NET.pid),{win});
+  cPub();
+  sfx(win?'win':'loss');
+  const sp=$('#splash');sp.className='on res-in '+(win?'win':'loss');
+  sp.innerHTML=`<div class="band"><span class="big">${win?'Victoire':'Défaite'}</span><span class="sub">${win?(C.boss?'Le boss est par le fond':'+'+(2+(C.node==='elite'?2:0))+' or, un objet, coque réparée'):'L’expédition s’arrête ici'}</span></div>`;
 }
 function coopEndBattle(){
   const won=B.winA,node=B.coop.node;
   SR=Math.random;B=null;hideSplash();G.phase='wait';render();
   if(won&&node==='elite'){const opts=[0,1,2].map(()=>rnd(Object.keys(WEAPONS)));
-    modal('Butin du chasseur','<p class="hint">Choisis une pièce d’artillerie.</p>',[...opts.map(k=>({l:weaponCardHTML(k),cls:'loot',f:()=>{toast(addWeapon(k));render();}})),{l:'Passer',f:()=>{}}]);}
-  banner('En attente des autres capitaines');
+    modal('Butin','<p class="hint">Choisis une pièce d’artillerie.</p>',[...opts.map(k=>({l:weaponCardHTML(k),cls:'loot',f:()=>{toast(addWeapon(k));render();}})),{l:'Passer',f:()=>{}}]);}
+  if(won)banner('En attente des autres capitaines');
+}
+function coopRecord(win){
+  const M=NET.meta,dk=M.cdiff||'matelot',k=M.pos?M.pos.k:0;
+  const r=lsGet('bordee-coop')||{};const x=r[dk]||{runs:0,wins:0,best:0};
+  x.runs++;if(win)x.wins++;x.best=Math.max(x.best,win?cSteps():k);r[dk]=x;lsSet('bordee-coop',r);
 }
 function coopEndScreen(win){
   B=null;hideSplash();cmapOpen(false);render();sfx(win?'win':'loss');
   const M=NET.meta,st=S.stats||{wins:0,losses:0,dealt:0,kills:0};
+  coopRecord(win);
+  const k=M.pos?M.pos.k:0,a=cAct(k);
   const box=(v,l)=>`<div class="estat"><b>${v}</b><span>${l}</span></div>`;
-  const crew=Object.values(S.place).length?humanBoard().units.map(u=>`<span class="tcrew">${portrait(u.k,u.s)}</span>`).join(''):'';
-  try{const r=lsGet('bordee-coop')||{runs:0,wins:0,best:0};r.runs++;if(win)r.wins++;r.best=Math.max(r.best,M.step||0);lsSet('bordee-coop',r);}catch(e){}
-  modal(win?'Expédition réussie':'La flotte a sombré',
-    `<p class="hint">${win?'Le vaisseau amiral de la Couronne est par le fond.':'Étape '+(M.step||0)+' sur '+COOP_STEPS+'.'}</p>
-    <div class="lplayers">${G.caps.map(c=>`<div class="lp${c.human?' me':''}" style="--c:${c.color}"><b>${c.name}</b><span>${(SHIPS[c.human?S.ship:c.ship]||{}).n||''}</span></div>`).join('')}</div>
-    <div class="estats">${box(st.wins+' / '+st.losses,'victoires / défaites')}${box(st.dealt,'dégâts infligés')}${box(st.kills,'ennemis vaincus')}${box(Math.max(0,M.fleet||0),'coque de la flotte')}</div>
-    ${crew?`<div class="tcrews">${crew}</div>`:''}`,
-    [{l:'Quitter le salon',cls:'go',f:()=>{netLeave();showMenu();}}]);
+  const crew=Object.values(S.place).length?humanBoard().units.map(u=>`<span class="tcrew">${portrait(u.k,u.s,'',true)}</span>`).join(''):'';
+  const btns=[{l:'Retour au menu',f:()=>{netLeave();showMenu();}}];
+  if(NET.local)btns.unshift({l:'Nouvelle expédition',cls:'go',f:()=>{netLeave();netSolo();}});
+  modal(win?'Expédition réussie':'L’expédition s’arrête',
+    `<p class="hint">${win?'Les trois mers sont à vous. L’Amiral de la Couronne a sombré.':'Défaite en '+ACTS[a].n+', étape '+(k+1)+' sur '+cSteps()+'.'} Difficulté : ${cDif().n}.</p>
+    <div class="cacts">${ACTS.map((A,i)=>`<span class="${i<a||win?'ok':i===a?'cur':''}">${A.n}</span>`).join('')}</div>
+    ${G.caps.length>1?`<div class="lplayers">${G.caps.map(c=>`<div class="lp${c.human?' me':''}" style="--c:${c.color}"><b>${c.name}</b><span>${(SHIPS[c.human?S.ship:c.ship]||{}).n||''}</span></div>`).join('')}</div>`:''}
+    <div class="estats">${box(st.wins+' / '+st.losses,'victoires / défaites')}${box(st.dealt,'dégâts infligés')}${box(st.kills,'ennemis vaincus')}</div>
+    ${crew?`<div class="tcrews">${crew}</div>`:''}`,btns);
 }
 function coopTopHTML(){
-  const M=NET.meta||{},step=M.step||0,t=M.node;
+  const M=NET.meta||{},step=M.step||0,t=M.node,a=cAct(M.pos?M.pos.k:0);
   const phase=G.phase==='battle'?'Combat':M.phase==='map'?'Choix de la route':'Préparation';
+  const nm=t==='boss'?ACTS[a].boss.name:t&&CN[t]?CN[t].n:'';
   return `<div class="tleft"><button class="btn sm pbtn" data-act="pause" aria-label="Pause">Menu</button><div class="logo">Bordée</div></div>
-  <div class="tracker"><div class="tline"><b>Étape ${step} / ${COOP_STEPS}</b><span class="nxt">${t&&CN[t]?CN[t].n:''}${M.rep?' (nouvel assaut)':''}</span><button class="btn sm cmapb" data-act="cmap">Carte</button></div>
+  <div class="tracker"><div class="tline"><b>${ACTS[a].n}</b><span class="cstep">${step} / ${cSteps()}</span><span class="nxt">${nm}</span>${G.sea?`<span class="seachip" title="${SEAS[G.sea].d}">${SEAS[G.sea].n}</span>`:''}<button class="btn sm cmapb" data-act="cmap">Carte</button></div>
     <div class="tphase"><span>${phase}</span><span class="tbar"><i id="tbar"></i></span><b id="tsec"></b>${G.phase==='plan'?'<button class="ready" data-act="go">Prêt</button>':''}</div></div>
-  <div class="mystat"><span class="mrank cfl">Flotte</span><span class="mhp">${ICON.hull}${Math.max(0,M.fleet??100)}</span></div>`;
+  <div class="mystat"><span class="mrank cfl">${cDif().n}</span><span class="mhp" title="Coque de ton navire, conservée d’un combat à l’autre">${ICON.hull}${cHullNow()}<small>/${cHullMax()}</small></span></div>`;
 }
 
 /* ----- carte des mers ----- */
@@ -3720,29 +3791,59 @@ function cmapOpen(on){
 }
 function cmapRender(){
   const el=document.getElementById('cmap');if(!el||!NET||!NET.mapOn||!NET.map)return;
-  const M=NET.meta||{},map=NET.map,voting=M.phase==='map';
-  const nextK=M.pos?M.pos.k+1:0,act=Math.floor(Math.min(map.length-1,voting?nextK:(M.pos?M.pos.k:0))/8),k0=act*8;
+  const M=NET.meta||{},map=NET.map,voting=M.phase==='map',solo=cHumans().length<=1;
+  const nextK=M.pos?M.pos.k+1:0,act=cAct(Math.min(map.length-1,voting?nextK:(M.pos?M.pos.k:0))),k0=act*ACT_COLS,A=ACTS[act];
   const reach=voting?cReach(M):[],trail=(M.trail||'').split(',').filter(Boolean),here=M.pos?M.pos.k+'_'+M.pos.i:'';
   const me=(NET.players[NET.pid]||{}).vote;
-  const pos=(k,i)=>({x:((k-k0)+.5)/8*100,y:(i+.5)/map[k].length*100});
+  const pos=(k,i)=>({x:((k-k0)+.5)/ACT_COLS*100,y:(i+.5)/map[k].length*100});
   let lines='',nodes='';
-  for(let k=k0;k<Math.min(map.length,k0+8);k++){
+  for(let k=k0;k<Math.min(map.length,k0+ACT_COLS);k++){
     map[k].forEach((o,i)=>{const a=pos(k,i);
-      if(k+1<k0+8&&k+1<map.length)(o.l||[]).forEach(j=>{const b=pos(k+1,j),on=trail.includes(k+'_'+i)&&trail.includes((k+1)+'_'+j);
+      if(k+1<k0+ACT_COLS)(o.l||[]).forEach(j=>{const b=pos(k+1,j),on=trail.includes(k+'_'+i)&&trail.includes((k+1)+'_'+j);
         lines+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="${on?'on':''}"/>`;});
       const id=k+'_'+i,can=reach.includes(id);
-      const votes=G.caps.filter(c=>((NET.players[c.pid||NET.pid]||{}).vote)===id).map(c=>`<i style="--c:${c.color}" title="${c.name}"></i>`).join('');
-      nodes+=`<button class="cnode t-${o.t}${trail.includes(id)?' past':''}${id===here?' here':''}${can?' can':''}${me===id?' mine':''}" style="left:${a.x}%;top:${a.y}%" ${can?`data-act="cvote" data-v="${id}"`:'tabindex="-1"'} title="${CN[o.t].n} : ${CN[o.t].d}">${cIcon(o.t)}${votes?`<span class="cvotes">${votes}</span>`:''}</button>`;
+      const votes=solo?'':G.caps.filter(c=>((NET.players[c.pid||NET.pid]||{}).vote)===id).map(c=>`<i style="--c:${c.color}" title="${c.name}"></i>`).join('');
+      const tt=o.t==='boss'?A.boss.name+' : '+A.boss.d:CN[o.t].n+' : '+CN[o.t].d;
+      nodes+=`<button class="cnode t-${o.t}${trail.includes(id)?' past':''}${id===here?' here':''}${can?' can':''}${me===id?' mine':''}" style="left:${a.x}%;top:${a.y}%" ${can?`data-act="cvote" data-v="${id}"`:'tabindex="-1"'} title="${tt}" aria-label="${tt}">${cIcon(o.t)}${votes?`<span class="cvotes">${votes}</span>`:''}</button>`;
     });
   }
+  const bossName=`<span class="cbossn" style="left:${(ACT_COLS-.5)/ACT_COLS*100}%">${A.boss.name}</span>`;
   const leg=Object.keys(CN).map(t=>`<span class="t-${t}">${cIcon(t)}${CN[t].n}</span>`).join('');
-  el.innerHTML=`<div class="cmbox"><div class="cmhead"><h2>Carte des mers</h2><span class="hint">Acte ${act+1} sur 2</span>
-    <span class="cmfleet">${ICON.hull}<b>${Math.max(0,M.fleet??100)}</b> coque de la flotte</span>
-    ${voting?`<span class="cmvote">Vote <b id="cmt"></b></span>`:`<button class="btn sm" data-act="cmap">Fermer</button>`}</div>
-    <p class="hint">${voting?'Clique la prochaine escale. La majorité l’emporte, égalité tirée au sort.':'Votre route jusqu’ici.'}</p>
-    <div class="cmfield"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div>
+  el.innerHTML=`<div class="cmbox" style="--tint:${A.tint}"><div class="cmhead"><h2>${A.n}</h2><span class="hint">Mer ${act+1} sur ${ACTS.length}, ${cDif().n}</span>
+    <span class="cmfleet">${ICON.hull}<b>${cHullNow()}</b>/ ${cHullMax()} coque</span>
+    ${voting?(solo?'':`<span class="cmvote">Vote <b id="cmt"></b></span>`):`<button class="btn sm" data-act="cmap">Fermer</button>`}</div>
+    <p class="hint">${voting?(solo?'Choisis ta prochaine escale.':'Clique la prochaine escale. La majorité l’emporte, égalité tirée au sort.'):'Votre route jusqu’ici.'}</p>
+    <div class="cmfield"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}${bossName}</div>
     <div class="cmleg">${leg}</div></div>`;
   coopTick();
+}
+
+/* ----- partie en solo : même moteur, base locale ----- */
+async function netSolo(){
+  const inp=$('#nname'),name=((inp&&inp.value)||OPT.netName||'Capitaine').trim().slice(0,16)||'Capitaine';
+  OPT.netName=name;saveOpt();
+  if(NET)netLeave();
+  LDB={};LLIS=[];
+  const pid=newPid(),cd=OPT.cdiff||'matelot';
+  NET={room:'SOLO',pid,name,host:true,off:0,local:true,meta:{host:pid,state:'lobby',mode:'coop',cdiff:cd},players:{},rd:{}};
+  NET.players[pid]={name,ship:OPT.ship||'galion',order:0,seen:snow()};
+  await fbPut('rooms/SOLO/g',{meta:NET.meta,players:NET.players});
+  netJoined();
+  await coopHostStart();
+}
+function expeHTML(){
+  const cd=OPT.cdiff||'matelot',rec=lsGet('bordee-coop')||{};
+  const recs=Object.entries(CDIF).filter(([k])=>rec[k]).map(([k,d])=>`<li><b>${d.n}</b><span>${rec[k].wins} victoire${rec[k].wins>1?'s':''} sur ${rec[k].runs}, record : étape ${rec[k].best}</span></li>`).join('');
+  return `<p class="hint">Trois mers, trois boss. Une seule défaite et l’expédition s’arrête. Ta coque garde ses avaries d’un combat à l’autre.</p>
+    <div class="cacts">${ACTS.map(A=>`<span><b>${A.n}</b><small>${A.boss.name}</small></span>`).join('')}</div>
+    <div class="orow"><span>Difficulté</span><span class="seg">${Object.entries(CDIF).map(([k,d])=>`<button class="${cd===k?'on':''}" data-act="cdiff" data-v="${k}">${d.n}</button>`).join('')}</span></div>
+    <p class="hint">${CDIF[cd].d}</p>
+    <div class="orow"><span>Ton navire</span><span class="lships">${Object.values(SHIPS).map(sh=>`<button class="mini${(OPT.ship||'galion')===sh.k?' on':''}" data-act="eship" data-v="${sh.k}">${sh.n}</button>`).join('')}</span></div>
+    <div class="tform"><label>Ton pseudo<input id="nname" maxlength="16" placeholder="Capitaine Lou" value="${OPT.netName||''}"></label></div>
+    <div class="mbtns"><button class="btn go" data-act="esolo">Partir seul</button><button class="btn" data-act="netcreate" data-v="coop">Créer un salon coop (2 ou 3)</button></div>
+    <div class="tform"><label>Code d’un salon coop<input id="ncode" maxlength="4" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:.2em"></label></div>
+    <div class="mbtns"><button class="btn" data-act="netjoin">Rejoindre</button></div>
+    ${recs?`<h4>Tes expéditions</h4><ol class="tlist">${recs}</ol>`:''}`;
 }
 
 /* ================= son : effets et musiques générés (Web Audio) ================= */
@@ -3860,6 +3961,7 @@ function drawMenu(){
     <div class="mtag">Huit capitaines. Un seul restera à flot.</div>
     <nav class="mnav">
       ${hasSave()?`<button class="mbtn main" data-act="resume" data-v="load">Reprendre, manche ${hasSave().round}</button><button class="mbtn" data-act="play">Nouvelle partie</button>`:'<button class="mbtn main" data-act="play">Jouer</button>'}
+      <button class="mbtn" data-act="expe">Expédition</button>
       <button class="mbtn" data-act="online">En ligne</button>
       <button class="mbtn" data-act="tourscr">Tournoi</button>
       <button class="mbtn" data-act="howto">Comment jouer</button>
@@ -3940,6 +4042,9 @@ function renderScreen(){
       <div class="mbtns"><button class="btn go" data-act="netcreate">Créer un salon</button></div>
       <div class="tform"><label>Code d\u2019un salon<input id="ncode" maxlength="4" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:.2em"></label></div>
       <div class="mbtns"><button class="btn" data-act="netjoin">Rejoindre</button></div>`;
+  }else if(n==='expe'){
+    title='Expédition';
+    body=expeHTML();
   }else if(n==='lobby'){
     title='Salon';back='Quitter';
     body=lobbyHTML();
@@ -4004,11 +4109,15 @@ Object.assign(ACT,{
     if(tp&&tourBase()){G.tour={code:tp.code,pseudo:tp.pseudo,boards:{}};tourFetch(1);toast('Tournoi '+tp.code+' : bonne chance, '+tp.pseudo);render();}},
   tourscr(){openScreen('tour');},
   online(){openScreen('online');},
-  netcreate(){netCreate();},netjoin(){netJoin();},
+  netcreate(v){netCreate(v);},netjoin(){netJoin();},
   netship(v){if(!NET)return;OPT.ship=v;saveOpt();fbPatch('rooms/'+NET.room+'/g/players/'+NET.pid,{ship:v});},
   netfill(v){if(!NET||!NET.host)return;fbPatch('rooms/'+NET.room+'/g/meta',{fill:v==='1'});},
   netstart(){if(NET&&NET.host)hostStart();},
-  netmode(v){if(!NET||!NET.host)return;fbPatch('rooms/'+NET.room+'/g/meta',{mode:v==='coop'?'coop':'br'});},
+  netcdiff(v){if(!NET||!NET.host||!CDIF[v])return;OPT.cdiff=v;saveOpt();fbPatch('rooms/'+NET.room+'/g/meta',{cdiff:v});},
+  expe(){openScreen('expe');},
+  cdiff(v){if(!CDIF[v])return;const i=$('#nname');if(i)OPT.netName=i.value.trim().slice(0,16);OPT.cdiff=v;saveOpt();renderScreen();},
+  eship(v){if(!SHIPS[v])return;const i=$('#nname');if(i)OPT.netName=i.value.trim().slice(0,16);OPT.ship=v;saveOpt();renderScreen();},
+  esolo(){hideScreen();netSolo();},
   cmap(){if(!NET||!G||!G.coop)return;cmapOpen(!NET.mapOn);},
   cvote(v){if(!NET||!G||!G.coop||!NET.meta||NET.meta.phase!=='map')return;fbPatch('rooms/'+NET.room+'/g/players/'+NET.pid,{vote:v});NET.players[NET.pid]=Object.assign({},NET.players[NET.pid],{vote:v});cmapRender();},
   csig(v){coopSignal(v);},
