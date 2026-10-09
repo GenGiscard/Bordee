@@ -4572,7 +4572,7 @@ const TRACKS={
 /* ----- bande-son : les morceaux de Mat, en lecture aléatoire ----- */
 /* les mp3 sont dans le même dossier que ce fichier (racine du dépôt) */
 const MUS_DIR='';
-const MUS_FILES=[['Carta_de_Viaje.mp3','Carta de Viaje',187.87],['Carte_Pirate_Glitch.mp3','Carte Pirate Glitch',214.03],['Carte_Pirate_Glitch_1.mp3','Carte Pirate Glitch (II)',229.99],['Drunly_Glitch_at_Sea.mp3','Drunly Glitch at Sea',188.64],['Dusty_Town_Square.mp3','Dusty Town Square',188.16],['FTL_Pirate_skirmish.mp3','FTL Pirate skirmish',209.76],['Glitch_Pirates_Voyage.mp3','Glitch Pirates Voyage',203.06],['Glitch_Sailor.mp3','Glitch Sailor',202.51],['Glitch_in_the_Galleon.mp3','Glitch in the Galleon',178.39],['Glitch_in_the_Galleon_1.mp3','Glitch in the Galleon (II)',194.78],['Glitch_in_the_Kingdom.mp3','Glitch in the Kingdom',189.62],['Glitch_in_the_Quest_Log.mp3','Glitch in the Quest Log',209.47],['Glitch_in_the_Quest_Log_1.mp3','Glitch in the Quest Log (II)',214.80],['Harp_and_Pad.mp3','Harp and Pad',224.52],['Island_of_Lost_Treasure_2.mp3','Island of Lost Treasure 2',187.82],['Map_of_the_Unknown.mp3','Map of the Unknown',217.03],['Menu_cadence.mp3','Menu cadence',199.99],['Nautical_Lo-Loop.mp3','Nautical Lo-Loop',188.47],['Quiet_Voyage.mp3','Quiet Voyage',203.18],['Saltwater_Static.mp3','Saltwater Static',203.95],['Small_Kingdom_at_Sea.mp3','Small Kingdom at Sea',184.99],['Taut_Lines_Deep_Space.mp3','Taut Lines Deep Space',182.64],['Warm_Melodic_Voyage.mp3','Warm Melodic Voyage',234.98],['Warping_Through_Static.mp3','Warping Through Static',214.82],['Warping_Through_Static_1.mp3','Warping Through Static (II)',224.78]];
+const MUS_FILES=[['Carta de Viaje.mp3','Carta de Viaje',187.87],['Carte Pirate Glitch 1.mp3','Carte Pirate Glitch (II)',229.99],['Carte Pirate Glitch.mp3','Carte Pirate Glitch',214.03],['Drunly Glitch at Sea.mp3','Drunly Glitch at Sea',188.64],['Dusty Town Square.mp3','Dusty Town Square',188.16],['FTL Pirate skirmish.mp3','FTL Pirate skirmish',209.76],["Glitch Pirate's Voyage.mp3","Glitch Pirate's Voyage",203.06],['Glitch Sailor.mp3','Glitch Sailor',202.51],['Glitch in the Galleon 1.mp3','Glitch in the Galleon (II)',194.78],['Glitch in the Galleon.mp3','Glitch in the Galleon',178.39],['Glitch in the Kingdom.mp3','Glitch in the Kingdom',189.62],['Glitch in the Quest Log.mp3','Glitch in the Quest Log',209.47],['Harp and Pad.mp3','Harp and Pad',224.52],['Island Quest.mp3','Island Quest',207.26],['Island of Lost Treasure 2.mp3','Island of Lost Treasure 2',187.82],['Island of Lost Treasure.mp3','Island of Lost Treasure',184.63],['Map of the Unknown.mp3','Map of the Unknown',217.03],['Menu cadence.mp3','Menu cadence',199.99],['Nautical Lo-Loop.mp3','Nautical Lo-Loop',188.47],['Quiet Voyage.mp3','Quiet Voyage',203.18],['Saltwater Static.mp3','Saltwater Static',203.95],['Small Kingdom at Sea.mp3','Small Kingdom at Sea',184.99],['Taut Lines, Deep Space.mp3','Taut Lines, Deep Space',182.64],['Warm Melodic Voyage.mp3','Warm Melodic Voyage',234.98],['Warping Through Static 1.mp3','Warping Through Static (II)',224.78],['Warping Through Static.mp3','Warping Through Static',214.82]];
 const MUS={el:null,list:null,bag:[],cur:-1,last:-1,vol:0,ok:false,err:0,key:null};
 /* ----- en ligne : même morceau, au même instant, pour tous les joueurs du salon ----- */
 const MUS_TOTAL=MUS_FILES.reduce((a,f)=>a+f[2],0);
@@ -4602,10 +4602,10 @@ function musInit(){
   if(MUS.list)return MUS.ok;
   MUS.list=MUS_FILES;
   const el=new Audio();MUS.ok=MUS.list.length>0&&!!el.canPlayType('audio/mpeg');
-  if(MUS.ok){MUS.el=el;el.preload='auto';el.addEventListener('ended',()=>{if(!musSyncKey())musNext();});el.addEventListener('playing',()=>{MUS.err=0;});
+  if(MUS.ok){MUS.el=el;el.preload='auto';el.addEventListener('ended',()=>{if(!musSyncKey())musNext();});el.addEventListener('playing',()=>{MUS.err=0;MUS.played=true;});
     /* fichier introuvable (html ouvert seul) : après 3 échecs, retour aux musiques générées par le code */
     el.addEventListener('error',()=>{if(MUS.cur>=0&&MUS.cand+1<musCands(MUS.list[MUS.cur][0]).length){musLoad(MUS.cur,MUS.cand+1);const k=musSyncKey();if(k){try{el.currentTime=musSchedule(k).off;}catch(e){}}if(MUS.vol>0)musPlay();return;}
-      if(++MUS.err>=3){MUS.ok=false;el.pause();el.removeAttribute('src');musLabel();return;}setTimeout(()=>musNext(),300);});}
+      if(++MUS.err>=3&&!MUS.played){MUS.ok=false;el.pause();el.removeAttribute('src');musLabel();return;}setTimeout(()=>musNext(),300);});}
   return MUS.ok;
 }
 /* sac mélangé : chaque morceau passe une fois avant qu’un autre tour ne commence, sans doublon à la jonction */
@@ -4615,15 +4615,8 @@ function musPick(){
     if(n>1&&MUS.bag[MUS.bag.length-1]===MUS.last)MUS.bag.unshift(MUS.bag.pop());}
   return MUS.bag.pop();
 }
-/* noms acceptés : « Harp and Pad.mp3 » (espaces) ou « Harp_and_Pad.mp3 » ; doublons : « X (1).mp3 », « X 1.mp3 » ou « X_1.mp3 » */
-function musCands(f){
-  const b=f.replace(/\.mp3$/i,''),sp=b.replace(/_/g,' '),out=[];
-  const m=b.match(/^(.*)_(\d)$/);
-  if(m){const s=m[1].replace(/_/g,' ');out.push(s+' ('+m[2]+')',s+' '+m[2],s+'_'+m[2],b);}
-  else out.push(sp,b);
-  const u=[...new Set(out.map(x=>x.trim()+'.mp3'))];
-  return u;
-}
+/* noms exacts des fichiers du dépôt ; repli sur la version avec « _ » */
+function musCands(f){return [...new Set([f,f.replace(/ /g,'_')])];}
 function musLoad(i,c){MUS.cur=i;MUS.last=i;MUS.cand=c||0;MUS.el.src=MUS_DIR+encodeURIComponent(musCands(MUS.list[i][0])[MUS.cand]);}
 function musNext(){if(!musInit()||!MUS.ok)return;if(musSyncKey())return;musLoad(musPick());musPlay();musLabel();}
 function musTarget(){return OPT.mute?0:Math.min(1,OPT.vmus*1.1);}
