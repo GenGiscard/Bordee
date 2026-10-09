@@ -376,6 +376,7 @@ body.menu #app,body.menu #drawer{display:none}
 .wbox{position:relative;background:linear-gradient(180deg,#1d3247,#0b1520);border:1px solid var(--gold)}
 .wprice{position:absolute;right:10px;top:12px;display:flex;align-items:center;gap:3px;color:var(--gold);font-weight:800}
 .tleft{display:flex;align-items:center;gap:10px}
+#sndhint{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:20px;background:rgba(8,16,24,.88);border:1px solid rgba(212,162,76,.6);color:#e8d7a6;font-size:14px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;z-index:60}#sndhint.on{opacity:1;transform:translate(-50%,0);animation:sndp 2.4s ease-in-out infinite}#sndhint svg{width:18px;height:18px;color:#d4a24c}@keyframes sndp{50%{border-color:rgba(212,162,76,1)}}
 .mvol{display:flex;align-items:center;gap:5px;color:#d4a24c;cursor:pointer}.mvol svg{width:14px;height:14px;flex:none}.mvol input{width:72px;accent-color:#d4a24c;cursor:pointer}
 .pbtn{font-size:13px}
 body.calm *{animation:none!important;transition:none!important}
@@ -4623,7 +4624,7 @@ function musCands(f){return [...new Set([f,f.replace(/ /g,'_')])];}
 function musLoad(i,c){MUS.cur=i;MUS.last=i;MUS.cand=c||0;MUS.el.src=MUS_DIR+encodeURIComponent(musCands(MUS.list[i][0])[MUS.cand]);}
 function musNext(){if(!musInit()||!MUS.ok)return;if(musSyncKey()||musIsMenu())return;musLoad(musPick());musPlay();musLabel();}
 function musTarget(){return OPT.mute?0:Math.min(1,OPT.vmus*1.1);}
-function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(musIsMenu()){if(MUS.cur!==-2){MUS.cur=-2;MUS.cand=0;MUS.el.loop=true;MUS.el.src=MUS_DIR+encodeURIComponent(MUS_MENU);musLabel();}}else if(MUS.cur<0){MUS.el.loop=false;const k=musSyncKey();if(k){musSync(k);return;}musLoad(musPick());}MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
+function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(musIsMenu()){if(MUS.cur!==-2){MUS.cur=-2;MUS.cand=0;MUS.el.loop=true;MUS.el.src=MUS_DIR+encodeURIComponent(MUS_MENU);musLabel();}}else if(MUS.cur<0){MUS.el.loop=false;const k=musSyncKey();if(k){musSync(k);return;}musLoad(musPick());}MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.then)pr.then(()=>{MUS.blocked=false;sndHint();},err=>{if(err&&err.name==='NotAllowedError'){MUS.blocked=true;sndHint();}});}
 function musTick(){
   /* changement menu <-> partie : on coupe et on charge la bonne musique */
   const menu=musIsMenu();
@@ -4634,7 +4635,7 @@ function musTick(){
   const target=musTarget();
   MUS.vol+=(target-MUS.vol)*.08;if(Math.abs(target-MUS.vol)<.01)MUS.vol=target;
   MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
-  if(MUS.vol>0&&MUS.el.paused&&!MUS.el.ended)musPlay();
+  if(MUS.vol>0&&MUS.el.paused&&!MUS.el.ended&&Date.now()-(MUS.tryT||0)>1000){MUS.tryT=Date.now();musPlay();}
   else if(MUS.vol<=0&&!MUS.el.paused)MUS.el.pause();
 }
 function musTitle(){return !MUS.ok?'':MUS.cur===-2?'Island of Lost Treasure (menu)':MUS.cur>=0&&MUS.list?MUS.list[MUS.cur][1]:'';}
@@ -4642,7 +4643,7 @@ function musLabel(){const e=document.getElementById('mustitle');if(e)e.textConte
 function wantTrack(){if(!G||G.phase==='menu'||G.phase==='select')return'menu';if(B)return'combat';return'tavern';}
 function musicTick(){
   if(!AU.ctx||AU.ctx.state!=='running')return;
-  if(musInit()&&MUS.ok){musTick();return;}
+  if(MUS.list&&MUS.ok)return;
   const want=wantTrack();
   if(want==='menu'){AU.track='menu';return;}
   if(AU.track!==want){AU.track=want;AU.step=0;AU.next=AU.ctx.currentTime+.1;}
@@ -4958,6 +4959,14 @@ Object.assign(ACT,{
 });
 
 saveOpt();
+/* la musique démarre dès le chargement quand le navigateur l'autorise ; sinon au premier clic ou à la première touche */
+function sndHint(){
+  let e=document.getElementById('sndhint');
+  const on=MUS.ok&&MUS.blocked&&musTarget()>0;
+  if(!e){if(!on)return;e=document.createElement('div');e.id='sndhint';e.innerHTML='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.5a6 6 0 0 1 0 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg><span>Clique ou appuie sur une touche pour lancer la musique</span>';document.body.appendChild(e);}
+  e.classList.toggle('on',on);
+}
+setInterval(()=>{try{if(musInit())musTick();}catch(e){}},50);
 showMenu();
 requestAnimationFrame(frame);
 </script>
