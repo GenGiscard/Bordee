@@ -4604,7 +4604,8 @@ function musInit(){
   const el=new Audio();MUS.ok=MUS.list.length>0&&!!el.canPlayType('audio/mpeg');
   if(MUS.ok){MUS.el=el;el.preload='auto';el.addEventListener('ended',()=>{if(!musSyncKey())musNext();});el.addEventListener('playing',()=>{MUS.err=0;});
     /* fichier introuvable (html ouvert seul) : après 3 échecs, retour aux musiques générées par le code */
-    el.addEventListener('error',()=>{if(++MUS.err>=3){MUS.ok=false;el.pause();el.removeAttribute('src');musLabel();return;}setTimeout(()=>musNext(),300);});}
+    el.addEventListener('error',()=>{if(MUS.cur>=0&&MUS.cand+1<musCands(MUS.list[MUS.cur][0]).length){musLoad(MUS.cur,MUS.cand+1);const k=musSyncKey();if(k){try{el.currentTime=musSchedule(k).off;}catch(e){}}if(MUS.vol>0)musPlay();return;}
+      if(++MUS.err>=3){MUS.ok=false;el.pause();el.removeAttribute('src');musLabel();return;}setTimeout(()=>musNext(),300);});}
   return MUS.ok;
 }
 /* sac mélangé : chaque morceau passe une fois avant qu’un autre tour ne commence, sans doublon à la jonction */
@@ -4614,7 +4615,16 @@ function musPick(){
     if(n>1&&MUS.bag[MUS.bag.length-1]===MUS.last)MUS.bag.unshift(MUS.bag.pop());}
   return MUS.bag.pop();
 }
-function musLoad(i){MUS.cur=i;MUS.last=i;MUS.el.src=MUS_DIR+encodeURIComponent(MUS.list[i][0]);}
+/* noms acceptés : « Harp and Pad.mp3 » (espaces) ou « Harp_and_Pad.mp3 » ; doublons : « X (1).mp3 », « X 1.mp3 » ou « X_1.mp3 » */
+function musCands(f){
+  const b=f.replace(/\.mp3$/i,''),sp=b.replace(/_/g,' '),out=[];
+  const m=b.match(/^(.*)_(\d)$/);
+  if(m){const s=m[1].replace(/_/g,' ');out.push(s+' ('+m[2]+')',s+' '+m[2],s+'_'+m[2],b);}
+  else out.push(sp,b);
+  const u=[...new Set(out.map(x=>x.trim()+'.mp3'))];
+  return u;
+}
+function musLoad(i,c){MUS.cur=i;MUS.last=i;MUS.cand=c||0;MUS.el.src=MUS_DIR+encodeURIComponent(musCands(MUS.list[i][0])[MUS.cand]);}
 function musNext(){if(!musInit()||!MUS.ok)return;if(musSyncKey())return;musLoad(musPick());musPlay();musLabel();}
 function musTarget(){return OPT.mute?0:Math.min(1,OPT.vmus*1.1);}
 function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(MUS.cur<0){const k=musSyncKey();if(k){musSync(k);return;}musLoad(musPick());}MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
