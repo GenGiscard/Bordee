@@ -4572,9 +4572,12 @@ const TRACKS={
 /* ----- bande-son : les morceaux de Mat, en lecture aléatoire ----- */
 /* les mp3 sont dans le même dossier que ce fichier (racine du dépôt) */
 const MUS_DIR='';
-const MUS_FILES=[['Carta de Viaje.mp3','Carta de Viaje',187.87],['Carte Pirate Glitch 1.mp3','Carte Pirate Glitch (II)',229.99],['Carte Pirate Glitch.mp3','Carte Pirate Glitch',214.03],['Drunly Glitch at Sea.mp3','Drunly Glitch at Sea',188.64],['Dusty Town Square.mp3','Dusty Town Square',188.16],['FTL Pirate skirmish.mp3','FTL Pirate skirmish',209.76],["Glitch Pirate's Voyage.mp3","Glitch Pirate's Voyage",203.06],['Glitch Sailor.mp3','Glitch Sailor',202.51],['Glitch in the Galleon 1.mp3','Glitch in the Galleon (II)',194.78],['Glitch in the Galleon.mp3','Glitch in the Galleon',178.39],['Glitch in the Kingdom.mp3','Glitch in the Kingdom',189.62],['Glitch in the Quest Log.mp3','Glitch in the Quest Log',209.47],['Harp and Pad.mp3','Harp and Pad',224.52],['Island Quest.mp3','Island Quest',207.26],['Island of Lost Treasure 2.mp3','Island of Lost Treasure 2',187.82],['Island of Lost Treasure.mp3','Island of Lost Treasure',184.63],['Map of the Unknown.mp3','Map of the Unknown',217.03],['Menu cadence.mp3','Menu cadence',199.99],['Nautical Lo-Loop.mp3','Nautical Lo-Loop',188.47],['Quiet Voyage.mp3','Quiet Voyage',203.18],['Saltwater Static.mp3','Saltwater Static',203.95],['Small Kingdom at Sea.mp3','Small Kingdom at Sea',184.99],['Taut Lines, Deep Space.mp3','Taut Lines, Deep Space',182.64],['Warm Melodic Voyage.mp3','Warm Melodic Voyage',234.98],['Warping Through Static 1.mp3','Warping Through Static (II)',224.78],['Warping Through Static.mp3','Warping Through Static',214.82]];
+const MUS_FILES=[['Carta de Viaje.mp3','Carta de Viaje',187.87],['Carte Pirate Glitch 1.mp3','Carte Pirate Glitch (II)',229.99],['Carte Pirate Glitch.mp3','Carte Pirate Glitch',214.03],['Drunly Glitch at Sea.mp3','Drunly Glitch at Sea',188.64],['Dusty Town Square.mp3','Dusty Town Square',188.16],['FTL Pirate skirmish.mp3','FTL Pirate skirmish',209.76],["Glitch Pirate's Voyage.mp3","Glitch Pirate's Voyage",203.06],['Glitch Sailor.mp3','Glitch Sailor',202.51],['Glitch in the Galleon 1.mp3','Glitch in the Galleon (II)',194.78],['Glitch in the Galleon.mp3','Glitch in the Galleon',178.39],['Glitch in the Kingdom.mp3','Glitch in the Kingdom',189.62],['Glitch in the Quest Log.mp3','Glitch in the Quest Log',209.47],['Harp and Pad.mp3','Harp and Pad',224.52],['Island Quest.mp3','Island Quest',207.26],['Island of Lost Treasure 2.mp3','Island of Lost Treasure 2',187.82],['Map of the Unknown.mp3','Map of the Unknown',217.03],['Menu cadence.mp3','Menu cadence',199.99],['Nautical Lo-Loop.mp3','Nautical Lo-Loop',188.47],['Quiet Voyage.mp3','Quiet Voyage',203.18],['Saltwater Static.mp3','Saltwater Static',203.95],['Small Kingdom at Sea.mp3','Small Kingdom at Sea',184.99],['Taut Lines, Deep Space.mp3','Taut Lines, Deep Space',182.64],['Warm Melodic Voyage.mp3','Warm Melodic Voyage',234.98],['Warping Through Static 1.mp3','Warping Through Static (II)',224.78],['Warping Through Static.mp3','Warping Through Static',214.82]];
 const MUS={el:null,list:null,bag:[],cur:-1,last:-1,vol:0,ok:false,err:0,key:null};
 /* ----- en ligne : même morceau, au même instant, pour tous les joueurs du salon ----- */
+/* au menu : toujours « Island of Lost Treasure », en boucle */
+const MUS_MENU='Island of Lost Treasure.mp3';
+function musIsMenu(){return wantTrack()==='menu';}
 const MUS_TOTAL=MUS_FILES.reduce((a,f)=>a+f[2],0);
 function musSyncKey(){return G&&G.net&&NET&&!NET.local&&NET.room&&NET.meta&&NET.meta.state==='game'&&NET.meta.seed?NET.room+':'+NET.meta.seed:null;}
 function musHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
@@ -4618,10 +4621,14 @@ function musPick(){
 /* noms exacts des fichiers du dépôt ; repli sur la version avec « _ » */
 function musCands(f){return [...new Set([f,f.replace(/ /g,'_')])];}
 function musLoad(i,c){MUS.cur=i;MUS.last=i;MUS.cand=c||0;MUS.el.src=MUS_DIR+encodeURIComponent(musCands(MUS.list[i][0])[MUS.cand]);}
-function musNext(){if(!musInit()||!MUS.ok)return;if(musSyncKey())return;musLoad(musPick());musPlay();musLabel();}
+function musNext(){if(!musInit()||!MUS.ok)return;if(musSyncKey()||musIsMenu())return;musLoad(musPick());musPlay();musLabel();}
 function musTarget(){return OPT.mute?0:Math.min(1,OPT.vmus*1.1);}
-function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(MUS.cur<0){const k=musSyncKey();if(k){musSync(k);return;}musLoad(musPick());}MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
+function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(musIsMenu()){if(MUS.cur!==-2){MUS.cur=-2;MUS.cand=0;MUS.el.loop=true;MUS.el.src=MUS_DIR+encodeURIComponent(MUS_MENU);musLabel();}}else if(MUS.cur<0){MUS.el.loop=false;const k=musSyncKey();if(k){musSync(k);return;}musLoad(musPick());}MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
 function musTick(){
+  /* changement menu <-> partie : on coupe et on charge la bonne musique */
+  const menu=musIsMenu();
+  if(menu&&MUS.cur!==-2){MUS.cur=-1;musPlay();}
+  else if(!menu&&MUS.cur===-2){MUS.cur=-1;MUS.el.loop=false;MUS.el.pause();if(!musSyncKey()){musPlay();musLabel();}}
   const key=musSyncKey();
   if(key)musSync(key);else if(MUS.key){MUS.key=null;}
   const target=musTarget();
@@ -4630,7 +4637,7 @@ function musTick(){
   if(MUS.vol>0&&MUS.el.paused&&!MUS.el.ended)musPlay();
   else if(MUS.vol<=0&&!MUS.el.paused)MUS.el.pause();
 }
-function musTitle(){return MUS.ok&&MUS.cur>=0&&MUS.list?MUS.list[MUS.cur][1]:'';}
+function musTitle(){return !MUS.ok?'':MUS.cur===-2?'Island of Lost Treasure (menu)':MUS.cur>=0&&MUS.list?MUS.list[MUS.cur][1]:'';}
 function musLabel(){const e=document.getElementById('mustitle');if(e)e.textContent=musTitle()||'Aucun';}
 function wantTrack(){if(!G||G.phase==='menu'||G.phase==='select')return'menu';if(B)return'combat';return'tavern';}
 function musicTick(){
@@ -4943,7 +4950,7 @@ function endTuto(){
   renderCoach();
 }
 Object.assign(ACT,{
-  musnext(){auUnlock();if(musSyncKey())return toast('En ligne, la musique est la même pour tous les joueurs');musNext();},
+  musnext(){auUnlock();if(musIsMenu())return toast('Au menu, la musique est toujours Island of Lost Treasure');if(musSyncKey())return toast('En ligne, la musique est la même pour tous les joueurs');musNext();},
   tuto(){startTuto();},
   tutonext(){if(TUTO)tutoGo(TUTO.i+1);},
   tutoquit(){endTuto();showMenu();},
