@@ -376,6 +376,7 @@ body.menu #app,body.menu #drawer{display:none}
 .wbox{position:relative;background:linear-gradient(180deg,#1d3247,#0b1520);border:1px solid var(--gold)}
 .wprice{position:absolute;right:10px;top:12px;display:flex;align-items:center;gap:3px;color:var(--gold);font-weight:800}
 .tleft{display:flex;align-items:center;gap:10px}
+.mvol{display:flex;align-items:center;gap:5px;color:#d4a24c;cursor:pointer}.mvol svg{width:14px;height:14px;flex:none}.mvol input{width:72px;accent-color:#d4a24c;cursor:pointer}
 .pbtn{font-size:13px}
 body.calm *{animation:none!important;transition:none!important}
 @media (max-width:760px){
@@ -2854,7 +2855,7 @@ function topHTML(){
   const kind=roundKind(r);
   const next=kind==='carousel'?'Escale au port':kind==='pve'?(lootRound(r)?'Couronne, butin':'Couronne'):(G.myNext?'contre '+G.myNext.cap.short+(G.myNext.ghost?' (fantôme)':''):'');
   const phase=G.phase==='battle'?'Combat':G.phase==='carousel'?'Escale':'Préparation';
-  return `<div class="tleft"><button class="btn sm pbtn" data-act="pause" aria-label="Pause">Menu</button><div class="logo">Bordée</div></div>
+  return `<div class="tleft"><button class="btn sm pbtn" data-act="pause" aria-label="Pause">Menu</button><div class="logo">Bordée</div><label class="mvol" title="Volume de la musique"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v8.3A2.5 2.5 0 1 0 7.5 12.6V5l6-1.6v5.4A2.5 2.5 0 1 0 15 11.1V1z" fill="currentColor"/></svg><input type="range" min="0" max="1" step="0.05" value="${OPT.mute?0:OPT.vmus}" data-mvol aria-label="Volume de la musique"></label></div>
   <div class="tracker"><div class="tline"><b>Manche ${r}</b><span class="nds">${nodes}</span><span class="nxt"${G.myNext&&kind==='pvp'?` data-tip="c:${G.myNext.cap.id}"`:''}>${next}</span>${G.sea?`<span class="seachip" title="${SEAS[G.sea].d}">${SEAS[G.sea].n}</span>`:''}</div>
     <div class="tphase"><span>${phase}</span><span class="tbar"><i id="tbar"></i></span><b id="tsec"></b>${G.phase==='plan'?'<button class="ready" data-act="go">Prêt</button>':''}</div></div>
   <div class="mystat"><span class="mrank">${S.alive?rankOf(S):S.rank}<sup>e</sup></span><span class="mhp">${ICON.hull}${Math.max(0,S.integ)}</span></div>`;
@@ -3462,6 +3463,8 @@ const OPT_DEF={low:false,plan:40,speed:1,diff:'normal',tips:true,calm:false,ship
 const OPT=Object.assign({},OPT_DEF);
 try{Object.assign(OPT,JSON.parse(localStorage.getItem('bordee-opts')||'{}'));}catch(e){}
 if(!OPT.pace2){OPT.speed=1;OPT.pace2=1;try{localStorage.setItem('bordee-opts',JSON.stringify(OPT));}catch(e){}}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.matches&&t.matches('[data-mvol]'))t.blur();});
+document.addEventListener('input',e=>{const t=e.target;if(!t||!t.matches||!t.matches('[data-mvol]'))return;OPT.vmus=+t.value;if(OPT.vmus>0)OPT.mute=false;saveOpt();auUnlock();});
 function saveOpt(){if(typeof auVolumes==='function')auVolumes();try{localStorage.setItem('bordee-opts',JSON.stringify(OPT));}catch(e){}document.body.classList.toggle('calm',!!OPT.calm);}
 const STATS={games:0,wins:0,top4:0,best:0,bestRound:0};
 try{Object.assign(STATS,JSON.parse(localStorage.getItem('bordee-stats')||'{}'));}catch(e){}
@@ -4429,7 +4432,7 @@ function coopTopHTML(){
   const M=NET.meta||{},step=M.step||0,t=M.node,a=cAct(M.pos?M.pos.k:0);
   const phase=G.phase==='battle'?'Combat':M.phase==='map'?'Choix de la route':'Préparation';
   const nm=t==='boss'?ACTS[a].boss.name:t&&CN[t]?CN[t].n:'';
-  return `<div class="tleft"><button class="btn sm pbtn" data-act="pause" aria-label="Pause">Menu</button><div class="logo">Bordée</div></div>
+  return `<div class="tleft"><button class="btn sm pbtn" data-act="pause" aria-label="Pause">Menu</button><div class="logo">Bordée</div><label class="mvol" title="Volume de la musique"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v8.3A2.5 2.5 0 1 0 7.5 12.6V5l6-1.6v5.4A2.5 2.5 0 1 0 15 11.1V1z" fill="currentColor"/></svg><input type="range" min="0" max="1" step="0.05" value="${OPT.mute?0:OPT.vmus}" data-mvol aria-label="Volume de la musique"></label></div>
   <div class="tracker"><div class="tline"><b>${ACTS[a].n}</b><span class="cstep">${step} / ${cSteps()}</span><span class="nxt">${nm}</span>${G.sea?`<span class="seachip" title="${SEAS[G.sea].d}">${SEAS[G.sea].n}</span>`:''}<button class="btn sm cmapb" data-act="cmap">Carte</button></div>
     <div class="tphase"><span>${phase}</span><span class="tbar"><i id="tbar"></i></span><b id="tsec"></b>${G.phase==='plan'?'<button class="ready" data-act="go">Prêt</button>':''}</div></div>
   <div class="mystat"><span class="mrank cfl">${cDif().n}</span><span class="mhp" title="Coque de ton navire, conservée d’un combat à l’autre">${ICON.hull}${cHullNow()}<small>/${cHullMax()}</small></span></div>`;
@@ -4569,13 +4572,37 @@ const TRACKS={
 /* ----- bande-son : les morceaux de Mat, en lecture aléatoire ----- */
 /* les mp3 sont dans le même dossier que ce fichier (racine du dépôt) */
 const MUS_DIR='';
-const MUS_FILES=[['Carta_de_Viaje.mp3','Carta de Viaje'],['Carte_Pirate_Glitch.mp3','Carte Pirate Glitch'],['Carte_Pirate_Glitch_1.mp3','Carte Pirate Glitch (II)'],['Drunly_Glitch_at_Sea.mp3','Drunly Glitch at Sea'],['Dusty_Town_Square.mp3','Dusty Town Square'],['FTL_Pirate_skirmish.mp3','FTL Pirate skirmish'],['Glitch_Pirates_Voyage.mp3','Glitch Pirates Voyage'],['Glitch_Sailor.mp3','Glitch Sailor'],['Glitch_in_the_Galleon.mp3','Glitch in the Galleon'],['Glitch_in_the_Galleon_1.mp3','Glitch in the Galleon (II)'],['Glitch_in_the_Kingdom.mp3','Glitch in the Kingdom'],['Glitch_in_the_Quest_Log.mp3','Glitch in the Quest Log'],['Glitch_in_the_Quest_Log_1.mp3','Glitch in the Quest Log (II)'],['Harp_and_Pad.mp3','Harp and Pad'],['Island_of_Lost_Treasure_2.mp3','Island of Lost Treasure 2'],['Map_of_the_Unknown.mp3','Map of the Unknown'],['Menu_cadence.mp3','Menu cadence'],['Nautical_Lo-Loop.mp3','Nautical Lo-Loop'],['Quiet_Voyage.mp3','Quiet Voyage'],['Saltwater_Static.mp3','Saltwater Static'],['Small_Kingdom_at_Sea.mp3','Small Kingdom at Sea'],['Taut_Lines_Deep_Space.mp3','Taut Lines Deep Space'],['Warm_Melodic_Voyage.mp3','Warm Melodic Voyage'],['Warping_Through_Static.mp3','Warping Through Static'],['Warping_Through_Static_1.mp3','Warping Through Static (II)']];
-const MUS={el:null,list:null,bag:[],cur:-1,last:-1,vol:0,ok:false,err:0};
+const MUS_FILES=[['Carta_de_Viaje.mp3','Carta de Viaje',187.87],['Carte_Pirate_Glitch.mp3','Carte Pirate Glitch',214.03],['Carte_Pirate_Glitch_1.mp3','Carte Pirate Glitch (II)',229.99],['Drunly_Glitch_at_Sea.mp3','Drunly Glitch at Sea',188.64],['Dusty_Town_Square.mp3','Dusty Town Square',188.16],['FTL_Pirate_skirmish.mp3','FTL Pirate skirmish',209.76],['Glitch_Pirates_Voyage.mp3','Glitch Pirates Voyage',203.06],['Glitch_Sailor.mp3','Glitch Sailor',202.51],['Glitch_in_the_Galleon.mp3','Glitch in the Galleon',178.39],['Glitch_in_the_Galleon_1.mp3','Glitch in the Galleon (II)',194.78],['Glitch_in_the_Kingdom.mp3','Glitch in the Kingdom',189.62],['Glitch_in_the_Quest_Log.mp3','Glitch in the Quest Log',209.47],['Glitch_in_the_Quest_Log_1.mp3','Glitch in the Quest Log (II)',214.80],['Harp_and_Pad.mp3','Harp and Pad',224.52],['Island_of_Lost_Treasure_2.mp3','Island of Lost Treasure 2',187.82],['Map_of_the_Unknown.mp3','Map of the Unknown',217.03],['Menu_cadence.mp3','Menu cadence',199.99],['Nautical_Lo-Loop.mp3','Nautical Lo-Loop',188.47],['Quiet_Voyage.mp3','Quiet Voyage',203.18],['Saltwater_Static.mp3','Saltwater Static',203.95],['Small_Kingdom_at_Sea.mp3','Small Kingdom at Sea',184.99],['Taut_Lines_Deep_Space.mp3','Taut Lines Deep Space',182.64],['Warm_Melodic_Voyage.mp3','Warm Melodic Voyage',234.98],['Warping_Through_Static.mp3','Warping Through Static',214.82],['Warping_Through_Static_1.mp3','Warping Through Static (II)',224.78]];
+const MUS={el:null,list:null,bag:[],cur:-1,last:-1,vol:0,ok:false,err:0,key:null};
+/* ----- en ligne : même morceau, au même instant, pour tous les joueurs du salon ----- */
+const MUS_TOTAL=MUS_FILES.reduce((a,f)=>a+f[2],0);
+function musSyncKey(){return G&&G.net&&NET&&!NET.local&&NET.room&&NET.meta&&NET.meta.state==='game'&&NET.meta.seed?NET.room+':'+NET.meta.seed:null;}
+function musHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function musPerm(h,cyc,adj){
+  const r=seeded((h^Math.imul(cyc+1,2654435761))>>>0),n=MUS_FILES.length,p=Array.from({length:n},(_,i)=>i);
+  for(let i=n-1;i>0;i--){const j=Math.floor(r()*(i+1));[p[i],p[j]]=[p[j],p[i]];}
+  if(adj&&cyc>0&&n>2){const prev=musPerm(h,cyc-1,false);if(p[0]===prev[n-1])[p[0],p[1]]=[p[1],p[0]];}
+  return p;
+}
+/* l'horloge du serveur donne la position : morceau et seconde exacte */
+function musSchedule(key){
+  const h=musHash(key),T=snow()/1000,cyc=Math.floor(T/MUS_TOTAL);let off=T-cyc*MUS_TOTAL;
+  const p=musPerm(h,cyc,true);
+  for(const i of p){const d=MUS_FILES[i][2];if(off<d)return{i,off};off-=d;}
+  return{i:p[p.length-1],off:0};
+}
+function musSync(key){
+  const sc=musSchedule(key),el=MUS.el;
+  if(MUS.cur!==sc.i||MUS.key!==key){MUS.key=key;musLoad(sc.i);try{el.currentTime=sc.off;}catch(e){}musLabel();if(MUS.vol>0)musPlay();return;}
+  /* recalage si un joueur a pris du retard (onglet en arrière-plan...), au plus une fois toutes les 4 s */
+  const now=Date.now();
+  if(!el.paused&&el.readyState>=2&&Math.abs(el.currentTime-sc.off)>2.5&&now-(MUS.seekT||0)>4000&&el.seekable.length&&el.seekable.end(0)>sc.off){MUS.seekT=now;try{el.currentTime=sc.off;}catch(e){}}
+}
 function musInit(){
   if(MUS.list)return MUS.ok;
   MUS.list=MUS_FILES;
   const el=new Audio();MUS.ok=MUS.list.length>0&&!!el.canPlayType('audio/mpeg');
-  if(MUS.ok){MUS.el=el;el.preload='auto';el.addEventListener('ended',()=>musNext());el.addEventListener('playing',()=>{MUS.err=0;});
+  if(MUS.ok){MUS.el=el;el.preload='auto';el.addEventListener('ended',()=>{if(!musSyncKey())musNext();});el.addEventListener('playing',()=>{MUS.err=0;});
     /* fichier introuvable (html ouvert seul) : après 3 échecs, retour aux musiques générées par le code */
     el.addEventListener('error',()=>{if(++MUS.err>=3){MUS.ok=false;el.pause();el.removeAttribute('src');musLabel();return;}setTimeout(()=>musNext(),300);});}
   return MUS.ok;
@@ -4588,14 +4615,16 @@ function musPick(){
   return MUS.bag.pop();
 }
 function musLoad(i){MUS.cur=i;MUS.last=i;MUS.el.src=MUS_DIR+encodeURIComponent(MUS.list[i][0]);}
-function musNext(){if(!musInit()||!MUS.ok)return;musLoad(musPick());musPlay();musLabel();}
+function musNext(){if(!musInit()||!MUS.ok)return;if(musSyncKey())return;musLoad(musPick());musPlay();musLabel();}
 function musTarget(){return OPT.mute?0:Math.min(1,OPT.vmus*1.1);}
-function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(MUS.cur<0)musLoad(musPick());MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
+function musPlay(){if(!MUS.ok||musTarget()<=0)return;if(MUS.cur<0){const k=musSyncKey();if(k){musSync(k);return;}musLoad(musPick());}MUS.el.volume=Math.max(.01,Math.min(1,MUS.vol));const pr=MUS.el.play();if(pr&&pr.catch)pr.catch(()=>{});}
 function musTick(){
+  const key=musSyncKey();
+  if(key)musSync(key);else if(MUS.key){MUS.key=null;}
   const target=musTarget();
   MUS.vol+=(target-MUS.vol)*.08;if(Math.abs(target-MUS.vol)<.01)MUS.vol=target;
   MUS.el.volume=Math.max(0,Math.min(1,MUS.vol));
-  if(MUS.vol>0&&MUS.el.paused)musPlay();
+  if(MUS.vol>0&&MUS.el.paused&&!MUS.el.ended)musPlay();
   else if(MUS.vol<=0&&!MUS.el.paused)MUS.el.pause();
 }
 function musTitle(){return MUS.ok&&MUS.cur>=0&&MUS.list?MUS.list[MUS.cur][1]:'';}
@@ -4911,7 +4940,7 @@ function endTuto(){
   renderCoach();
 }
 Object.assign(ACT,{
-  musnext(){auUnlock();musNext();},
+  musnext(){auUnlock();if(musSyncKey())return toast('En ligne, la musique est la même pour tous les joueurs');musNext();},
   tuto(){startTuto();},
   tutonext(){if(TUTO)tutoGo(TUTO.i+1);},
   tutoquit(){endTuto();showMenu();},
