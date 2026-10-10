@@ -376,7 +376,7 @@ body.menu #app,body.menu #drawer{display:none}
 .wbox{position:relative;background:linear-gradient(180deg,#1d3247,#0b1520);border:1px solid var(--gold)}
 .wprice{position:absolute;right:10px;top:12px;display:flex;align-items:center;gap:3px;color:var(--gold);font-weight:800}
 .tleft{display:flex;align-items:center;gap:10px}
-#sndhint{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:20px;background:rgba(8,16,24,.88);border:1px solid rgba(212,162,76,.6);color:#e8d7a6;font-size:14px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;z-index:60}#sndhint.on{opacity:1;transform:translate(-50%,0);animation:sndp 2.4s ease-in-out infinite}#sndhint svg{width:18px;height:18px;color:#d4a24c}@keyframes sndp{50%{border-color:rgba(212,162,76,1)}}
+#sndhint{position:fixed;left:50%;bottom:auto;top:74px;transform:translate(-50%,20px);display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:20px;background:rgba(8,16,24,.88);border:1px solid rgba(212,162,76,.6);color:#e8d7a6;font-size:14px;opacity:0;pointer-events:none;transition:opacity .4s,transform .4s;z-index:60}#sndhint.on{opacity:1;transform:translate(-50%,0);animation:sndp 2.4s ease-in-out infinite}#sndhint svg{width:18px;height:18px;color:#d4a24c}@keyframes sndp{50%{border-color:rgba(212,162,76,1)}}
 .mvol{display:flex;align-items:center;gap:5px;color:#d4a24c;cursor:pointer}.mvol svg{width:14px;height:14px;flex:none}.mvol input{width:72px;accent-color:#d4a24c;cursor:pointer}
 .pbtn{font-size:13px}
 body.calm *{animation:none!important;transition:none!important}
@@ -509,7 +509,9 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .ust small{margin-right:4px}
 .ust i{width:6px;height:6px;background:#0009;border:1px solid #fff3}.ust i.f{background:var(--gold);border-color:var(--gold)}
 .uitms{display:flex;flex-direction:column;gap:2px}
-.uitm{display:flex;align-items:center;gap:4px;font-size:13px}
+.uitm{display:flex;align-items:center;gap:4px;font-size:13px;flex-wrap:wrap}.uitm small{flex-basis:100%;padding-left:24px;color:#9fd36b;font-size:12px;line-height:1.25}.istat{display:block;color:#9fd36b;font-weight:600}
+.eorg{position:relative;padding:4px 6px 5px 10px;margin:3px 0;border-left:3px solid var(--rc);background:rgba(255,255,255,.03);border-radius:3px}.eorg b{font-size:13px}.eorg em{float:right;font-style:normal;font-size:12px;font-weight:700}.eorg small{display:block;font-size:11.5px;color:var(--mut);line-height:1.25}.eorg.dead{opacity:.55}.eorg.hot{background:rgba(255,209,102,.16);box-shadow:0 0 0 1px #ffd166}
+#selbox{position:fixed;border:1.5px solid #8fd36b;background:rgba(143,211,107,.12);pointer-events:none;z-index:40;display:none}
 .uitm .itm{width:16px;height:16px}
 .yard{display:flex;flex-direction:column;gap:4px}
 .yrow{display:flex;justify-content:space-between;align-items:center;background:var(--glass2);padding:5px 8px}
@@ -1035,6 +1037,13 @@ function combineItems(list){
 }
 function recipesWith(k){return Object.entries(LEGEND).filter(([,v])=>v.r.includes(k)).map(([lk,v])=>({other:v.r[0]===k?v.r[1]:v.r[0],res:lk}));}
 const ITEM_IDX={sabre:0,pistolets:1,plastron:2,hache:3,tricorne:4,longuevue:5,trousse:6,marteau:7,seau:8,bottes:9,rhum:10,lame:11,armure:12,berserk:13,sextant:14,calfat:15,cuirasse:16,vigie:17,pavillon:18,tranchant:19,bouclier:20,pompe:21,ordonnance:22,duel:23};
+function itemStats(k){
+  const it=ITEMS[k],p=[],pc=v=>(v>=1?'+':'\u2212')+Math.round(Math.abs(v-1)*100)+' %';
+  if(it.atk)p.push(pc(it.atk)+' combat');if(it.hp)p.push(pc(it.hp)+' PV');if(it.man)p.push(pc(it.man)+' bonus de poste');if(it.spd)p.push(pc(it.spd)+' vitesse de marche');
+  if(it.rep)p.push('réparations x'+it.rep);if(it.ext)p.push('incendies éteints x'+it.ext);if(it.sab)p.push('sabotage x'+it.sab);
+  if(it.aura)p.push('soigne sa salle : '+it.aura+' PV/s');if(it.helm)p.push('+'+Math.round(it.helm*100)+' % d\u2019esquive à la barre');if(it.mana)p.push('ultime chargé à '+it.mana+' % au départ');
+  return p;
+}
 function itemIcon(k,extra){
   const i=ITEM_IDX[k];if(i===undefined)return '';
   return `<span class="itm${LEGEND[k]?' leg':''} ${extra||''}" role="img" aria-label="${ITEMS[k].n}" style="background-image:var(--items);background-size:2400% 100%;background-position:calc(${i} * 100% / 23) 0;background-repeat:no-repeat"></span>`;
@@ -1243,6 +1252,7 @@ function manning(s,r){let m=0;for(const c of ownHere(s,r))m+=(UD[c.k].man/3)*c.s
 function eff(s,r){return r==='barre'?(manning(s,'barre')>0?1:0):avail(s,r);}
 function shieldMax(s){const p=avail(s,'charpenterie');return p>0?Math.min(6,Math.floor(p/2)+s.L.layer+(s.fx.layerAug||0)):0;}
 function eva(s){
+  if(s.L.monster)return Math.max(bv(s,'eva',0),.3*korgF(s,'voilure'));
   if(manning(s,'barre')<=0)return 0;
   let helm=0;for(const c of ownHere(s,'barre'))helm+=c.helm;
   const base=Math.max(0,Math.min(.7,(sea()==='brume'?.15:0)+.05*avail(s,'voilure')+.025*manning(s,'voilure')+.02*manning(s,'barre')+helm+s.fx.eva+bv(s,'eva',0)));
@@ -1324,7 +1334,9 @@ function tileIn(room,c){
   return best;
 }
 function stationRoom(c){return c.owner.L.at[c.st.r][c.st.c];}
-function intruders(s,r){return s.crew.filter(c=>c.alive&&c.owner!==s&&tileRoom(c)===r);}
+/* deux navires d'une même flotte (expédition coop) sont alliés : leurs marins ne se battent jamais */
+function hostile(a,b){return a!==b&&!(a&&b&&a.side&&a.side===b.side);}
+function intruders(s,r){return s.crew.filter(c=>c.alive&&hostile(c.owner,s)&&tileRoom(c)===r);}
 function crewAI(s){
   const live=s.crew.filter(c=>c.alive&&c.owner===s&&!c.zip);
   const infOk=avail(s,'infirmerie')>0&&s.rooms.infirmerie.fire<=0;
@@ -1369,7 +1381,7 @@ function moveCrew(s,h){
 const SM=[1,1.5,2.2];
 function buff(s,k,dur,val){s.tb=s.tb||{};const b=s.tb[k];if(!b||b.t<dur||val>b.v)s.tb[k]={t:dur,v:val};}
 function bv(s,k,def){const b=s.tb&&s.tb[k];return b&&b.t>0?b.v:def;}
-function enemiesHere(c){const s=c.loc,r=tileRoom(c);return s.crew.filter(o=>o.alive&&o.owner!==c.owner&&tileRoom(o)===r);}
+function enemiesHere(c){const s=c.loc,r=tileRoom(c);return s.crew.filter(o=>o.alive&&hostile(o.owner,c.owner)&&tileRoom(o)===r);}
 function ownRoomCrew(c){const s=c.loc,r=tileRoom(c);return s.crew.filter(o=>o.alive&&o.owner===c.owner&&tileRoom(o)===r);}
 function healC(Bt,c,n){if(!c.alive)return;const b=c.hp;c.hp=Math.min(c.mh,c.hp+n);if(Bt.visual&&c.hp>b)for(let i=0;i<3;i++)Bt.parts.push({x:crewXY(c.loc,c).x+(Math.random()-.5)*12,y:crewXY(c.loc,c).y-14,vx:0,vy:-18,life:.9,max:.9,col:'143,211,107',r:2.4,heal:true});}
 function hitAll(Bt,c,n){for(const e of enemiesHere(c)){e.hp-=n*e.owner.fx.dmgTaken;if(Bt.visual)ftext(Bt,crewXY(e.loc,e),'-'+Math.round(n),'#ff8f80');}}
@@ -1391,7 +1403,7 @@ const ULTS={
   amirale:{n:'Ligne de bataille',d:'Toutes les armes du navire sont rechargées et les 2 coups suivants sont critiques.',f:(Bt,s,c,m)=>{for(const w of s.weapons)if(w.on)w.c=WEAPONS[w.k].cd*.99;s.tb=s.tb||{};s.tb.crits={t:999,v:(s.tb.crits&&s.tb.crits.v>0?s.tb.crits.v:0)+Math.round(1+m)};}},
   mortimer:{n:'Sainte-barbe',d:'Tire 4 boulets qui traversent le pavois.',f:(Bt,s,c,m)=>{const o=otherShip(Bt,s);for(let i=0;i<Math.round(3+m);i++){const r=srnd(ROOMS),tl=srnd(o.L.rt[r]);Bt.proj.push({s,o,k:'canon12',wi:0,room:r,tile:{c:tl[0],r:tl[1]},delay:i*.15,t:0,dur:.6,fired:false,pierce:true,dmgO:2});}}},
   sorciere:{n:'Brume ensorcelée',d:'Le navire esquive presque tout pendant 3 s et l\u2019équipage regagne 20 % de PV.',f:(Bt,s,c,m)=>{buff(s,'dodge',2+m,.9);for(const x of s.own)healC(Bt,x,x.mh*.2*m);}},
-  hollandais:{n:'Équipage spectral',d:'Tous les marins ennemis subissent 25 dégâts et le navire devient insaisissable 2 s.',f:(Bt,s,c,m)=>{const o=otherShip(Bt,s);for(const e of [...o.crew,...s.crew])if(e.alive&&e.owner!==s){e.hp-=25*m*e.owner.fx.dmgTaken;if(Bt.visual)ftext(Bt,crewXY(e.loc,e),'-'+Math.round(25*m),'#9dffb0');}buff(s,'dodge',1+m,.95);}},
+  hollandais:{n:'Équipage spectral',d:'Tous les marins ennemis subissent 25 dégâts et le navire devient insaisissable 2 s.',f:(Bt,s,c,m)=>{const o=otherShip(Bt,s);for(const e of [...o.crew,...s.crew])if(e.alive&&hostile(e.owner,s)){e.hp-=25*m*e.owner.fx.dmgTaken;if(Bt.visual)ftext(Bt,crewXY(e.loc,e),'-'+Math.round(25*m),'#9dffb0');}buff(s,'dodge',1+m,.95);}},
   reine:{n:'Trésor de guerre',d:'Répare toutes les salles, remet 2 couches au pavois et rend 4 points de coque.',f:(Bt,s,c,m)=>{for(const r of ROOMS)s.rooms[r].dmg=0;s.layers=Math.min(shieldMax(s),s.layers+Math.round(1+m));s.hull=Math.min(s.hullMax,s.hull+Math.round(3+m));}},
   hacherouge:{n:'Fendoir',d:'40 dégâts à tous les ennemis de sa salle. Sans ennemi, répare entièrement sa salle.',f:(Bt,s,c,m)=>{if(enemiesHere(c).length)hitAll(Bt,c,40*m);else if(c.loc===s)s.rooms[tileRoom(c)].dmg=0;}}
 };
@@ -1450,11 +1462,26 @@ function bossClone(base,k,n,cls,tint){
 }
 BOSS_SHIPS.veuve=bossClone('requin','veuve','La Veuve des Brumes','Navire fantôme','ghost');
 BOSS_SHIPS.amiral=bossClone('colosse','amiral','L’Amiral de la Couronne','Vaisseau amiral','royal');
-BOSS_SHIPS.kraken={k:'kraken',ext:{l:95,r:95,h:200},n:'Le Kraken',cls:'Monstre des abysses',monster:true,boss:true,cols:7,hull:60,reactor:10,
-  sys:{voilure:2,charpenterie:3,batterie:4,infirmerie:2,grappins:0},ladders:[1,5],
+BOSS_SHIPS.kraken={k:'kraken',ext:{l:95,r:95,h:200},n:'Le Kraken',cls:'Monstre des abysses',monster:true,boss:true,cols:7,hull:60,reactor:14,
+  sys:{voilure:2,charpenterie:4,batterie:4,infirmerie:2,grappins:0},ladders:[1,5],
   rt:{barre:[[5,0],[6,0]],infirmerie:[[3,0],[4,0]],voilure:[[0,0],[1,0],[2,0]],batterie:[[3,1],[4,1],[5,1],[6,1]],charpenterie:[[0,1],[1,1],[2,1]]},
   base:{barre:0,voilure:1,charpenterie:1,batterie:2,infirmerie:1},eva:-.05,speed:1,hp:1,layer:1,crit:0,gold:0,arms:['tentacule'],masts:[],perk:'',st:[5,1,4,0],
-  rn:{barre:'Œil',voilure:'Nageoires',charpenterie:'Carapace',batterie:'Poche d’encre',infirmerie:'Cœur'}};
+  rn:{barre:'Œil',voilure:'Nageoires',charpenterie:'Carapace',batterie:'Bras',infirmerie:'Cœur'}};
+/* organes du Kraken : chacun a un effet, et un organe crevé (2 barres de dégâts) cesse de fonctionner */
+const KORG={
+  infirmerie:{n:'Cœur',e:'Régénère la coque et referme les autres organes. Crevez-le d\u2019abord.'},
+  barre:{n:'Œil',e:'S\u2019ouvre par moments : un coup dans l\u2019œil ouvert fait triple dégâts. Crevé, plus d\u2019Étreinte.'},
+  batterie:{n:'Bras',e:'Font frapper les tentacules et lancent l\u2019encre. Chaque barre perdue coupe une tentacule.'},
+  charpenterie:{n:'Carapace',e:'Reforme une couche de carapace (bouclier) toutes les 9 s.'},
+  voilure:{n:'Nageoires',e:'Donnent 30 % d\u2019esquive au Kraken.'}
+};
+function korgF(s,r){return Math.max(0,1-s.rooms[r].dmg/2);}
+function korgShort(s,r){const f=korgF(s,r),dead=f<=0;
+  if(r==='barre')return s.eyeOpen?['OUVERT : x3','#ffd166']:dead?['crevé','#ff7a6a']:['fermé','#cfc2b0'];
+  if(r==='infirmerie')return dead?['arrêté','#ff7a6a']:['régénère','#9fd36b'];
+  if(r==='charpenterie')return dead?['brisée','#ff7a6a']:['se reforme','#9fd3e6'];
+  if(r==='batterie')return dead?['paralysés','#ff7a6a']:['actifs','#ffb08a'];
+  return dead?['crevées','#ff7a6a']:['esquive '+Math.round(30*f)+' %','#9fd3e6'];}
 (function(){const L=BOSS_SHIPS.kraken;L.at=[[],[]];for(const r of ROOMS)for(const [c,y] of L.rt[r])L.at[y][c]=r;L.rt0=L.rt;L.cols0=L.cols;L.walls=new Set();L.xrooms=[];L.allRooms=ROOMS.slice();})();
 /* arme du monstre : invisible des boutiques et des butins (non énumérable) */
 Object.defineProperty(WEAPONS,'tentacule',{value:{n:'Tentacule',shots:1,dmg:2,cd:7,type:'tent',pw:1,price:0},enumerable:false});
@@ -1506,14 +1533,28 @@ function bossTick(Bt,h){
   Z.t+=h;
   const pick=()=>al[Z.n++%al.length];
   if(Bt.bossK==='kraken'){
-    if(Z.t>=15){Z.t=0;const s=pick(),r=srnd(ROOMS),rm=s.rooms[r];
+    const f=r=>korgF(E,r);
+    /* Cœur : régénère la coque et referme les autres organes */
+    const hf=f('infirmerie');
+    if(hf>0){E.hull=Math.min(E.hullMax,E.hull+E.hullMax*.0025*hf*h);for(const r of ROOMS)if(r!=='infirmerie')E.rooms[r].dmg=Math.max(0,E.rooms[r].dmg-.06*hf*h);}
+    /* Carapace : une couche toutes les 9 s */
+    Z.sh=(Z.sh||0)+h*f('charpenterie');
+    if(Z.sh>=9){Z.sh=0;if(E.layers<shieldMax(E)){E.layers++;if(Bt.visual)ftext(Bt,roomCenter(E,'charpenterie'),'La carapace se reforme','#9fd3e6');}}
+    /* Œil : s'ouvre 6 s toutes les 18 s */
+    Z.eyeT=(Z.eyeT||0)+h;
+    if(E.eyeOpen){Z.eyeO-=h;if(Z.eyeO<=0){E.eyeOpen=false;Z.eyeT=0;}}
+    else if(Z.eyeT>=18&&f('barre')>0){E.eyeOpen=true;Z.eyeO=6;if(Bt.visual){ftext(Bt,roomCenter(E,'barre'),'L’œil s’ouvre : visez-le !','#ffd166');sfx('bell');}}
+    /* Étreinte (sauf œil crevé) */
+    if(Z.t>=(Z.half?11:15)){Z.t=0;if(f('barre')>0){const s=pick(),r=srnd(ROOMS),rm=s.rooms[r];
       rm.dmg=Math.min(3,rm.dmg+1.5);s.hull=Math.max(0,s.hull-2);for(const c of s.crew)if(c.alive&&tileRoom(c)===r)c.hp-=20*c.owner.fx.dmgTaken;
-      if(Bt.visual){(Bt.grabs=Bt.grabs||[]).push({s,r,life:1.6,max:1.6});ftext(Bt,roomCenter(s,r),'Étreinte du Kraken !','#ff9dd0');shake(5);sfx('hit',true);}}
-    Z.ink=(Z.ink||0)+h;if(Z.ink>=24){Z.ink=0;for(const s of al)s.inkT=5;if(Bt.visual){ftext(Bt,roomCenter(E,'batterie'),'Nuage d’encre : canonniers aveuglés','#c9a6ff');for(const s of al)for(let i=0;i<26;i++){const p=roomCenter(s,ROOMS[i%5]);Bt.parts.push({x:p.x+(Math.random()-.5)*80,y:p.y+(Math.random()-.5)*30,vx:(Math.random()-.5)*20,vy:-6,life:2.4,max:2.4,col:'20,10,30',r:6+Math.random()*6});}}}
-    if(!Z.half&&E.hull<E.hullMax*.5){Z.half=true;E.hull=Math.min(E.hullMax,E.hull+E.hullMax*.1);if(Bt.visual)ftext(Bt,roomCenter(E,'infirmerie'),'Le Kraken se régénère','#9fd36b');}
+      if(Bt.visual){(Bt.grabs=Bt.grabs||[]).push({s,r,life:1.6,max:1.6});ftext(Bt,roomCenter(s,r),'Étreinte du Kraken !','#ff9dd0');shake(5);sfx('hit',true);}}}
+    /* Encre (sauf bras crevés) */
+    Z.ink=(Z.ink||0)+h;if(Z.ink>=22){Z.ink=0;const bf=f('batterie');if(bf>0){for(const s of al)s.inkT=2+3*bf;if(Bt.visual){ftext(Bt,roomCenter(E,'batterie'),'Nuage d’encre : canonniers aveuglés','#c9a6ff');for(const s of al)for(let i=0;i<26;i++){const p=roomCenter(s,ROOMS[i%5]);Bt.parts.push({x:p.x+(Math.random()-.5)*80,y:p.y+(Math.random()-.5)*30,vx:(Math.random()-.5)*20,vy:-6,life:2.4,max:2.4,col:'20,10,30',r:6+Math.random()*6});}}}}
+    /* Furie à mi-coque */
+    if(!Z.half&&E.hull<E.hullMax*.5){Z.half=true;E.fx.charge*=1.3;if(Bt.visual){ftext(Bt,roomCenter(E,'infirmerie'),'Le Kraken entre en furie !','#ff6a8a');shake(6);}}
   }else if(Bt.bossK==='veuve'){
     if(Z.t>=17){Z.t=0;E.tb=E.tb||{};E.tb.eva={v:.35,t:6};if(Bt.visual)ftext(Bt,roomCenter(E,'voilure'),'Brume spectrale','#bff6ea');}
-    Z.b=(Z.b||0)+h;if(Z.b>=24){Z.b=0;const party=E.own.filter(c=>c.alive&&c.loc===E&&!c.zip).sort((a,b)=>b.atk-a.atk||a.uid-b.uid).slice(0,2);
+    Z.b=(Z.b||0)+h;if(Z.b>=30){Z.b=0;const party=E.own.filter(c=>c.alive&&c.loc===E&&!c.zip).sort((a,b)=>b.atk-a.atk||a.uid-b.uid).slice(0,2);
       if(party.length){E.grap=1;const tgt=pick(),room=srnd(['batterie','barre','charpenterie']);boardTo(Bt,E,party,tgt,room);if(Bt.visual)ftext(Bt,roomCenter(tgt,room),'Abordage fantôme !','#bff6ea');}}
   }else if(Bt.bossK==='amiral'){
     if(Z.t>=16){Z.t=0;for(const s of al)for(const w of E.weapons)if(w.on!==false)fire(Bt,E,s,w);if(Bt.visual){ftext(Bt,roomCenter(E,'batterie'),'Bordée royale !','#ffd166');shake(4);}}
@@ -1597,7 +1638,8 @@ function drawKraken(g,s,geo){
   if(hurt>.12){g.strokeStyle=`rgba(110,0,18,${Math.min(.85,.3+hurt)})`;g.lineWidth=3;for(let i=0;i<Math.ceil(hurt*8);i++){const x=cx+((i*37)%9-4)*rx*.2,y=top+60+(i*29)%110;g.beginPath();g.moveTo(x,y);g.lineTo(x+10,y+12);g.lineTo(x+3,y+24);g.lineTo(x+12,y+34);g.stroke();}}
   g.restore();
   /* œil : pupille en fente horizontale */
-  const E0=roomCenter(s,'barre'),ex=E0.x+ln*6,ey=geo.gy-44+geo.bob,blink=(t%6)<.14?.12:1,look=Math.sin(t*.7)*3,R=27;
+  const E0=roomCenter(s,'barre'),ex=E0.x+ln*6,ey=geo.gy-44+geo.bob,open=!!s.eyeOpen,blink=open?1:korgF(s,'barre')<=0?.05:.22,look=Math.sin(t*.7)*3,R=open?33:27;
+  if(open){const k=.5+.5*Math.sin(t*9);g.fillStyle=`rgba(255,200,60,${.18+.18*k})`;g.beginPath();g.ellipse(ex,ey,R*2.1,R*1.6,0,0,7);g.fill();}
   g.fillStyle='#14030b';g.beginPath();g.ellipse(ex,ey,R*1.35,R*1.02,0,0,7);g.fill();
   const eg=g.createRadialGradient(ex-R*.3,ey-R*.3,2,ex,ey,R);eg.addColorStop(0,'#fffbd0');eg.addColorStop(.4,'#f5c33a');eg.addColorStop(.85,'#a85a0a');eg.addColorStop(1,'#5a2804');
   g.fillStyle=eg;g.beginPath();g.ellipse(ex,ey,R,R*.74*blink,0,0,7);g.fill();
@@ -1617,9 +1659,12 @@ function drawKraken(g,s,geo){
     g.globalAlpha=.55+.35*pul;g.strokeStyle=col;g.lineWidth=1.8;g.setLineDash([5,4]);g.stroke();g.setLineDash([]);
     if(rm.dmg>0){g.globalAlpha=1;g.fillStyle=`rgba(150,0,20,${Math.min(.5,rm.dmg*.17)})`;g.fill();}
     g.restore();
-    const lab=roomLabel(s,room);g.font='600 12px "Alegreya Sans",sans-serif';const tw=g.measureText(lab).width,ly=R.y+R.h-10;
-    g.fillStyle='rgba(20,6,12,.85)';rr(g,R.x+R.w/2-tw/2-6,ly-8,tw+12,15,3);g.fill();g.fillStyle=col;g.fillRect(R.x+R.w/2-tw/2-6,ly-8,3,15);
-    g.fillStyle='rgba(255,236,240,.96)';g.textAlign='left';g.fillText(lab,R.x+R.w/2-tw/2,ly+3.5);
+    if(room==='barre'&&s.eyeOpen){g.save();g.strokeStyle=`rgba(255,209,102,${.6+.4*Math.sin(t*9)})`;g.lineWidth=3;g.beginPath();g.ellipse(R.x+R.w/2,R.y+R.h/2,R.w/2+3,R.h/2+3,0,0,7);g.stroke();g.restore();}
+    const lab=roomLabel(s,room),[stt,stc]=korgShort(s,room);g.font='700 12px "Alegreya Sans",sans-serif';const tw=g.measureText(lab).width;g.font='600 10px "Alegreya Sans",sans-serif';const sw=g.measureText(stt).width;
+    const bw=Math.max(tw,sw)+12,ly=R.y+R.h/2-6;
+    g.fillStyle='rgba(20,6,12,.86)';rr(g,R.x+R.w/2-bw/2,ly-8,bw,27,3);g.fill();g.fillStyle=col;g.fillRect(R.x+R.w/2-bw/2,ly-8,3,27);
+    g.textAlign='center';g.font='700 12px "Alegreya Sans",sans-serif';g.fillStyle='rgba(255,236,240,.97)';g.fillText(lab,R.x+R.w/2+1,ly+3.5);
+    g.font='600 10px "Alegreya Sans",sans-serif';g.fillStyle=stc;g.fillText(stt,R.x+R.w/2+1,ly+15);g.textAlign='left';
     const bs=roomBadges(s,room);bs.forEach((k,i)=>drawBadge(g,k,R.x+R.w/2-(bs.length-1)*9+i*18,R.y+4));
   }
 }
@@ -1652,7 +1697,7 @@ function boarders(Bt,owner){
   if(Bt.fleet&&owner===Bt.Bs){const o=[];for(const s of Bt.fleet)for(const c of s.crew)if(c.alive&&c.owner===owner&&!c.zip)o.push(c);return o;}
   return otherShip(Bt,owner).crew.filter(c=>c.alive&&c.owner===owner&&!c.zip)}
 function boardParty(Bt,owner,list,room){
-  const to=otherShip(Bt,owner);if(!list.length||owner.grap<1)return false;
+  const to=otherShip(Bt,owner);if(!list.length||owner.grap<1||to.L.monster)return false;
   const tiles=to.L.rt[room];
   list.forEach((c,i)=>{
     const t=tiles[i%tiles.length];c.path=[];c.task=null;c.healing=false;
@@ -1674,6 +1719,15 @@ function stepZips(Bt,h){
     if(Bt.visual){Bt.ropes.push({a:sh,b:to,room:z.room||'voilure',life:.5,ax:z.ax,ay:z.ay,bx:z.bx,by:z.by});if(!z.back)ftext(Bt,roomCenter(to,z.room),'À l\u2019abordage !','#ffd166');}
   }
 }
+/* demi-tour : les marins encore sur la corde reviennent à bord */
+function inTransit(owner){return owner.crew.filter(c=>c.alive&&c.owner===owner&&c.zip&&!c.zip.back);}
+function turnBack(Bt,owner){
+  const list=inTransit(owner);if(!list.length)return false;
+  for(const c of list){c.zip=null;c.path=[];c.task=null;goTo(c,c.st);}
+  owner.grap=Math.max(owner.grap,.5);
+  if(Bt.visual)ftext(Bt,roomCenter(owner,'voilure'),'Demi-tour !','#cfe8ff');
+  return true;
+}
 function recallParty(Bt,owner){
   if(owner.sunk)return false;
   const list=boarders(Bt,owner);if(!list.length||owner.grap<1)return false;
@@ -1686,6 +1740,7 @@ function recallParty(Bt,owner){
 function defenseIn(s,r){return s.crew.filter(c=>c.alive&&c.owner===s&&tileRoom(c)===r).reduce((a,c)=>a+c.atk*c.hp/c.mh,0);}
 function aiBoarding(Bt,owner){
   const foe=otherShip(Bt,owner),out=boarders(Bt,owner);
+  if(foe.L.monster&&!out.length)return;
   if(out.length){
     const weak=out.reduce((a,c)=>a+c.hp/c.mh,0)/out.length<.45;
     if(weak&&owner.grap>=1){recallParty(Bt,owner);return;}
@@ -1702,9 +1757,13 @@ function aiBoarding(Bt,owner){
     return;
   }
   if(owner.grap<1||avail(owner,'grappins')<=0)return;
+  /* l'IA attend un moment avant chaque abordage (tirage commun aux joueurs) */
+  if(owner.boardAt===undefined)owner.boardAt=16+SR()*10;
+  if(Bt.t<owner.boardAt)return;
   const home=owner.crew.filter(c=>c.alive&&c.owner===owner&&c.hp>.6*c.mh);
-  if(home.length<3)return;
-  const n=home.length>=6?3:2;
+  if(home.length<4)return;
+  owner.boardAt=Bt.t+22+SR()*14;
+  const n=home.length>=7?3:2;
   const party=home.sort((a,b)=>b.atk-a.atk).slice(0,n);
   let best='batterie',bv=1e9;
   for(const r of ROOMS){const v=defenseIn(foe,r)-(r==='batterie'?3:r==='barre'?2:0);if(v<bv){bv=v;best=r;}}
@@ -1730,13 +1789,13 @@ function stepShip(Bt,s,o,h){
     const rm=s.rooms[r],here=ownHere(s,r);
     const all=s.crew.filter(c=>c.alive&&tileRoom(c)===r);
     // mêlée : défenseurs contre abordeurs
-    const def=all.filter(c=>c.owner===s),inv=all.filter(c=>c.owner!==s);
+    const def=all.filter(c=>!hostile(c.owner,s)),inv=all.filter(c=>hostile(c.owner,s));
     if(def.length&&inv.length){
       for(const a of def){const t=inv[(a.uid+Math.floor(Bt.t*2))%inv.length];t.hp-=a.atk*1.3*h*t.owner.fx.dmgTaken;}
       for(const a of inv){const t=def[(a.uid+Math.floor(Bt.t*2))%def.length];t.hp-=a.atk*h*t.owner.fx.dmgTaken;}
       if(Bt.visual&&Math.random()<h*6){sfx('sword');const p=roomCenter(s,r);Bt.parts.push({x:p.x+(Math.random()-.5)*20,y:p.y,vx:(Math.random()-.5)*60,vy:-30-Math.random()*40,life:.3,max:.3,col:'255,240,200',r:1.5,grav:true,flash:true});}
     }else if(inv.length&&!def.length){
-      rm.dmg=Math.min(3,rm.dmg+h*.12*inv.reduce((a,c)=>a+c.sab,0));
+      rm.dmg=Math.min(3,rm.dmg+h*.09*inv.reduce((a,c)=>a+c.sab,0));
     }
     if(rm.fire>0){
       rm.fire-=h*(.03+here.reduce((a,c)=>a+.35*c.ext,0)*s.fx.ext);
@@ -1781,6 +1840,7 @@ function resolve(Bt,p){
   let d=p.dmgO||W.dmg,crit=false;
   if(s.tb&&s.tb.crits&&s.tb.crits.v>0){d++;crit=true;s.tb.crits.v--;}
   else if(SR()<s.fx.crit+(sea()==='nuit'?.15:0)){d++;crit=true;}
+  if(o.L.monster&&p.room==='barre'&&o.eyeOpen){d*=3;if(pos)ftext(Bt,{x:pos.x,y:pos.y-18},'Dans l\u2019œil !','#ffd166');}
   o.hull=Math.max(0,o.hull-d);
   const rm=o.rooms[p.room];
   rm.dmg=Math.min(3,rm.dmg+(W.type==='chain'?2:1));
@@ -2207,7 +2267,7 @@ function drawFire(g,rm,R){
 function roomBadges(s,room){
   const rm=s.rooms[room],out=[];
   if(rm.fire>0)out.push('fire');
-  if(s.crew.some(c=>c.alive&&c.owner!==s&&tileRoom(c)===room))out.push('swords');
+  if(s.crew.some(c=>c.alive&&hostile(c.owner,s)&&tileRoom(c)===room))out.push('swords');
   if(rm.dmg>.01&&rm.fire<=0)out.push('hammer');
   if(room==='barre'){if(manning(s,'barre')<=0)out.push('off');}
   else if(s.sys[room]&&s.sys[room].alloc>0&&avail(s,room)<=0)out.push('off');
@@ -2261,7 +2321,7 @@ function crewAction(s,c){
   if(c.path.length){const t=c.path[0];return Math.abs(t.r-c.y)>.01&&Math.abs(t.c-c.x)<.05?'climb':'walk';}
   if(!B)return'idle';
   const r=tileRoom(c);if(!r)return'idle';
-  if(s.crew.some(o=>o.alive&&o.owner!==c.owner&&tileRoom(o)===r))return'fight';
+  if(s.crew.some(o=>o.alive&&hostile(o.owner,c.owner)&&tileRoom(o)===r))return'fight';
   if(c.owner!==s)return'sabotage';
   const rm=s.rooms[r];
   if(rm.fire>0)return'fire';
@@ -2453,10 +2513,10 @@ function drawCrew(g,s,battle){
     const showBars=battle||(G&&G.phase!=='menu'&&G.phase!=='select');
     if(showBars){
       const bw=24,bx=Math.round(x-bw/2),by=Math.round(headY-7),r=Math.max(0,c.hp/c.mh);
-      const own=!B||c.owner===B.A;
+      const own=!B||c.owner===B.A,ally=!own&&!hostile(c.owner,B.A);
       g.fillStyle='rgba(0,0,0,.85)';g.fillRect(bx-1,by-1,bw+2,battle?8:6);
       g.fillStyle='#3a1414';g.fillRect(bx,by,bw,4);
-      g.fillStyle=!own?(r>.3?'#e0564f':'#ff8a6a'):r>.6?'#7fe36b':r>.3?'#f2c94c':'#ff5b4f';g.fillRect(bx,by,Math.max(r>0?1:0,Math.round(bw*r)),4);
+      g.fillStyle=ally?(r>.3?'#4ea3e0':'#8cc8f5'):!own?(r>.3?'#e0564f':'#ff8a6a'):r>.6?'#7fe36b':r>.3?'#f2c94c':'#ff5b4f';g.fillRect(bx,by,Math.max(r>0?1:0,Math.round(bw*r)),4);
       g.fillStyle='rgba(255,255,255,.35)';g.fillRect(bx,by,Math.round(bw*r),1);
       for(let i=1;i<4;i++){g.fillStyle='rgba(0,0,0,.45)';g.fillRect(bx+Math.round(bw*i/4),by,1,4);}
       if(battle){const mp=(c.mp||0)/100,full=mp>=1;
@@ -2467,7 +2527,7 @@ function drawCrew(g,s,battle){
       headY=by-3;
     }
     g.fillStyle='#ffd166';for(let i=0;i<c.s;i++){g.beginPath();g.arc(x-(c.s-1)*3.5+i*7,headY,2.2,0,7);g.fill();g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=.7;g.stroke();}
-    if(battle&&B&&c.owner!==s){g.fillStyle=c.owner===B.A?'#8fd36b':'#e0564f';g.beginPath();g.moveTo(x-4,headY-6);g.lineTo(x+4,headY-6);g.lineTo(x,headY-2);g.fill();}
+    if(battle&&B&&c.owner!==s){g.fillStyle=c.owner===B.A?'#8fd36b':!hostile(c.owner,B.A)?'#4ea3e0':'#e0564f';g.beginPath();g.moveTo(x-4,headY-6);g.lineTo(x+4,headY-6);g.lineTo(x,headY-2);g.fill();}
     if(c.healing){g.fillStyle='#9fd36b';g.fillRect(x+7,y-20,6,2);g.fillRect(x+9,y-22,2,6);}
   }
 }
@@ -2873,7 +2933,7 @@ function enemyHTML(){
   const sys=SYS.map(k=>`<div class="esys" data-tip="s:${k}:foe"><span>${SYSS[k]}</span><span class="ebars" id="es_${k}"></span></div>`).join('');
   const wep=e.weapons.map((w,i)=>`<div class="ewep" id="ew${i}">${wicon(w.k)}<span class="cinfo"><b>${WEAPONS[w.k].n}</b><span class="ewc"><i id="ewg${i}"></i></span></span></div>`).join('');
   return `${pillsHTML()}<div class="epanel"><div class="ehead" style="--c:${o.color}"><b>${nm}</b><small>${e.L.n}, ${e.L.cls}</small></div>
-    <h5>Équipage</h5>${crew||'<p class="hint">Aucun marin</p>'}<h5>Systèmes</h5><div class="esyss">${sys}</div><h5>Artillerie</h5>${wep}</div>`;
+    ${e.L.monster?`<h5>Organes</h5>${ROOMS.slice().sort((a,b)=>Object.keys(KORG).indexOf(a)-Object.keys(KORG).indexOf(b)).map(r=>`<div class="eorg" id="org_${r}" style="--rc:${ROOM_COL[r]}"><b>${KORG[r].n}</b><em id="orgs_${r}"></em><small>${KORG[r].e}</small></div>`).join('')}`:`<h5>Équipage</h5>${crew||'<p class="hint">Aucun marin</p>'}`}<h5>Systèmes</h5><div class="esyss">${sys}</div><h5>Artillerie</h5>${wep}</div>`;
 }
 function capTipHTML(id){
   const c=G.caps[id];if(!c)return'';const bd=capBoard(c),L=SHIPS[c.ship]||SHIPS.galion;
@@ -2949,7 +3009,7 @@ function unitCardHTML(k,s,withSell,items,live){
   const d=UD[k],o=ORIG[d.o],ro=ROLES[d.ro];
   const hp=Math.round(HPT[d.t-1]*[1,1.8,3.2][s-1]);
   const st=(n,lab)=>`<span class="ust"><small>${lab}</small>${'<i class="f"></i>'.repeat(n)}${'<i></i>'.repeat(5-n)}</span>`;
-  const its=(items||[]).map(x=>`<span class="uitm">${itemIcon(x)}${ITEMS[x].n}</span>`).join('');
+  const its=(items||[]).map(x=>`<span class="uitm">${itemIcon(x)}<b>${ITEMS[x].n}</b><small>${itemStats(x).join(' · ')}</small></span>`).join('');
   return `<div class="ucard t${d.t}">${portrait(k,s,"",true)}<div class="uinfo"><b>${d.n}</b>
     <span class="tags"><span class="tierb" style="--tc:${TIERC[d.t-1]}">Rang ${d.t}</span><span style="color:${o.c}">${o.n}</span><span>${ro.n}</span></span>
     <span class="ustat">${live?`${Math.ceil(live.hp)} / ${live.mh}`:Math.round(hp*itemMods(items||[]).hp)} PV, combat ${(Math.round((2+1.2*d.atk)*[1,1.8,3][s-1]*itemMods(items||[]).atk*10)/10).toLocaleString('fr-FR')} dégâts/s</span>
@@ -3101,12 +3161,13 @@ function liveUI(){
   set('holdbtn',e=>e.classList.toggle('on',!!B.hold));
   set('boardhint',e=>e.classList.toggle('on',!!B.boardMode));
   set('gch',e=>e.style.width=Math.round(100*B.A.grap)+'%');
-  set('bboard',e=>{const ok=B.A.grap>=1&&avail(B.A,'grappins')>0&&!boarders(B,B.A).length;e.disabled=!ok;e.classList.toggle('on',!!B.boardMode);e.classList.toggle('ready',ok&&!B.boardMode&&!B.over);
+  set('bboard',e=>{const ok=!B.Bs.L.monster&&B.A.grap>=1&&avail(B.A,'grappins')>0&&!boarders(B,B.A).length;e.disabled=!ok;e.classList.toggle('on',!!B.boardMode);e.classList.toggle('ready',ok&&!B.boardMode&&!B.over);
     if(ok&&!B.over&&!B.boardTold&&B.A.own.some(c=>c.alive)){B.boardTold=true;banner('Grappins prêts : sélectionne des marins puis « À l’abordage »');}});
-  set('bretreat',e=>{e.disabled=!(B.A.grap>=1&&boarders(B,B.A).length);});
+  set('bretreat',e=>{const tr=inTransit(B.A).length>0,t=tr?'Demi-tour':'Retraite';if(e.textContent!==t)e.textContent=t;e.classList.toggle('ready',tr);e.disabled=!(tr||(B.A.grap>=1&&boarders(B,B.A).length));});
   updatePower();
   for(const [sh,k] of [[B.A,'A'],[B.Bs,'B']])set('bf'+k,e=>{const h=buffsHTML(sh);if(e._h!==h){e._h=h;e.innerHTML=h;}});
   const E=B.Bs;
+  if(E.L.monster)for(const r of ROOMS)set('orgs_'+r,e=>{const [t,c]=korgShort(E,r);if(e._t!==t){e._t=t;e.textContent=t;e.style.color=c;}const p=e.parentNode;p.classList.toggle('dead',korgF(E,r)<=0);p.classList.toggle('hot',r==='barre'&&!!E.eyeOpen);});
   for(const c of E.own){
     set('ech'+c.uid,e=>e.style.width=Math.max(0,100*c.hp/c.mh)+'%');
     set('ecm'+c.uid,e=>{e.style.width=Math.round(c.mp||0)+'%';e.classList.toggle('full',(c.mp||0)>=100);});
@@ -3249,8 +3310,8 @@ const ACT={
     else{if(y.alloc<=0)return;y.alloc--;}
     S.alloc[k]=y.alloc;if(B){updatePower();liveUI();}else{PLAN=makeShip(humanBoard(),0);$('#traits').innerHTML=traitsHTML();$('#board').innerHTML=boardHTML();}},
   arm(v){const i=+v;if(!S.arms[i])return;const a=S.arms[i];a.armed=a.armed===false;if(B&&B.net){netCmd({c:'arm',i,v:a.armed});return liveUI();}if(B&&B.A.weapons[i])B.A.weapons[i].armed=a.armed;if(B)liveUI();else render();},
-  board(){if(!B||B.A.grap<1)return;if(!B.selC.length)return toast('Sélectionne les marins à envoyer, puis clique une salle ennemie');B.boardMode=!B.boardMode;liveUI();},
-  retreat(){if(B&&B.net){if(B.A.grap>=1&&boarders(B,B.A).length)netCmd({c:'rt'});return;}if(B&&recallParty(B,B.A))liveUI();},
+  board(){if(!B)return;if(B.Bs.L.monster)return toast('On n\u2019aborde pas un monstre : vise ses organes au canon');if(B.A.grap<1)return;if(!B.selC.length)return toast('Sélectionne les marins à envoyer, puis clique une salle ennemie');B.boardMode=!B.boardMode;liveUI();},
+  retreat(){if(B&&inTransit(B.A).length){if(B.net)netCmd({c:'dt'});else turnBack(B,B.A);return liveUI();}if(B&&B.net){if(B.A.grap>=1&&boarders(B,B.A).length)netCmd({c:'rt'});return;}if(B&&recallParty(B,B.A))liveUI();},
   upr(){if(B)return;const c=reactorCost(S.reactorUp);if(S.gold<c||S.reactorUp>=6)return;S.gold-=c;S.reactorUp++;toast('Un matelot de plus');render();},
   ups(v){if(B)return;const lv=sysMax(S.L,S.sysUp)[v],c=sysCost(lv);if(lv>=SYSCAP[v]||S.gold<c)return;S.gold-=c;S.sysUp[v]=(S.sysUp[v]||0)+1;toast(SYSN[v]+' agrandie');render();},
   ult(v){if(!B||B.net||G.net)return;const c=B.A.own.find(x=>x.uid===+v);if(c&&castUlt(B,B.A,c))liveUI();},
@@ -3319,9 +3380,28 @@ document.addEventListener('pointerdown',e=>{
   else if(e.target===CV){
     const p=toWorld(e.clientX,e.clientY);
     if(!B){const t=tileAtGeo(VIEW.geos[0],S.L,p.x,p.y);if(t){const o=occupant(t.c,t.r);if(o!==null)src={uid:o,k:S.units[o].k,s:S.units[o].s};}}
-    else{const c=crewAt(B.A,p.x,p.y,B.A)||crewAt(B.Bs,p.x,p.y,B.A);if(c)src={crew:c,k:c.k,s:c.s};}
+    else{const c=crewAt(B.A,p.x,p.y,B.A)||crewAt(B.Bs,p.x,p.y,B.A);if(c)src={crew:c,k:c.k,s:c.s};
+      else if(!B.boardMode&&(B.selW===null||B.selW===undefined)&&mountAt(B.A,p.x,p.y)<0)BOX={x0:e.clientX,y0:e.clientY,add:e.shiftKey||e.ctrlKey||e.metaKey,on:false};}
   }
   if(src)DRAG={src,x0:e.clientX,y0:e.clientY,moved:false};
+});
+/* lasso : glisser sur une zone vide du combat sélectionne tous tes marins dans le cadre */
+let BOX=null;
+function boxEl(){let b=document.getElementById('selbox');if(!b){b=document.createElement('div');b.id='selbox';document.body.appendChild(b);}return b;}
+document.addEventListener('pointermove',e=>{
+  if(!BOX)return;
+  const w=Math.abs(e.clientX-BOX.x0),hh=Math.abs(e.clientY-BOX.y0);if(!BOX.on&&w+hh<10)return;BOX.on=true;
+  const b=boxEl();b.style.display='block';b.style.left=Math.min(e.clientX,BOX.x0)+'px';b.style.top=Math.min(e.clientY,BOX.y0)+'px';b.style.width=w+'px';b.style.height=hh+'px';
+});
+document.addEventListener('pointerup',e=>{
+  if(!BOX)return;const bx=BOX;BOX=null;boxEl().style.display='none';
+  if(!bx.on||!B)return;
+  DRAG_SUPPRESS=true;setTimeout(()=>{DRAG_SUPPRESS=false;},60);
+  const x0=Math.min(e.clientX,bx.x0),x1=Math.max(e.clientX,bx.x0),y0=Math.min(e.clientY,bx.y0),y1=Math.max(e.clientY,bx.y0);
+  const got=B.A.own.filter(c=>{if(!c.alive||c.zip)return false;const p=crewXY(c.loc,c),sx=VIEW.ox+p.x*VIEW.k,sy=VIEW.oy+(p.y-10)*VIEW.k;return sx>=x0&&sx<=x1&&sy>=y0&&sy<=y1;}).map(c=>c.uid);
+  B.selC=bx.add?[...new Set([...B.selC,...got])]:got;
+  if(got.length)toast(got.length+' marin'+(got.length>1?'s':'')+' sélectionné'+(got.length>1?'s':''));
+  liveUI();
 });
 document.addEventListener('pointermove',e=>{
   if(!DRAG)return;
@@ -3389,7 +3469,7 @@ function showTipFor(x){
   else if(kind==='c'){TIP.innerHTML=capTipHTML(+k);}
   else if(kind==='u')TIP.innerHTML=unitCardHTML(k,+s,false,extra&&S.units[+extra]?S.units[+extra].items:null);
   else if(kind==='i'){const it=ITEMS[k];const rc=it.leg?'':recipesWith(k).map(r=>`<span class="trec">+ ${itemIcon(r.other)} ${ITEMS[r.other].n} = ${itemIcon(r.res)} <b>${ITEMS[r.res].n}</b></span>`).join('');
-    TIP.innerHTML=`<div class="ttip"><b>${it.leg?'Légendaire : ':''}${it.n}</b><span>${it.d}</span>${rc?'<small>Combinaisons :</small>'+rc:''}<small>Glisse-le sur un marin pour l\u2019équiper.</small></div>`;}
+    TIP.innerHTML=`<div class="ttip"><b>${it.leg?'Légendaire : ':''}${it.n}</b>${itemStats(k).map(x=>`<span class="istat">${x}</span>`).join('')}<span>${it.d}</span>${rc?'<small>Combinaisons :</small>'+rc:''}<small>Glisse-le sur un marin pour l\u2019équiper.</small></div>`;}
   else{const def=ORIG[k]||ROLES[k];TIP.innerHTML=`<div class="ttip"><b>${def.n}</b><span>(2) ${def.d[0]}</span><span>(3) ${def.d[1]}</span></div>`;}
   const r=x.getBoundingClientRect();
   TIP.classList.add('on');
@@ -3424,7 +3504,7 @@ function roomTipHTML(s,r,foe){
   if(!isSysRoom(r)){const n=s.crew.filter(c=>c.alive&&tileRoom(c)===r).length;return `<div class="ttip stip"><b>${RN[r]}${foe?' (ennemi)':''}</b><span>${XD[xType(r)]||''}</span><small>Salle de passage : aucun marin n’y prend son poste.${n?` ${n} marin${n>1?'s':''} ici.`:''}</small></div>`;}
   const rm=s.rooms[r],dm=Math.ceil(rm.dmg-1e-6),here=s.crew.filter(c=>c.alive&&tileRoom(c)===r&&c.owner===s).length,boarders=s.crew.filter(c=>c.alive&&tileRoom(c)===r&&c.owner!==s).length;
   const what={barre:'Le timonier tient la barre : sans lui, aucune esquive.',voilure:'Les voiles : esquive. Un marin ici ajoute de l’esquive.',charpenterie:'Le pavois (bouclier) se répare depuis ici.',batterie:'L’énergie des canons. Un marin ici accélère le rechargement.',infirmerie:'Les marins présents ici sont soignés.'}[r];
-  const what2=s.L.monster?{barre:'L’œil du Kraken.',voilure:'Ses nageoires : un organe à crever.',charpenterie:'La carapace : elle protège le monstre.',batterie:'La poche d’encre. Endommagée, elle ralentit ses tentacules.',infirmerie:'Le cœur du monstre.'}[r]:what;
+  const what2=s.L.monster?KORG[r].e+' État : '+korgShort(s,r)[0]+'. Un organe touché deux fois est crevé et cesse de fonctionner, jusqu\u2019à ce que le Cœur le referme.':what;
   return `<div class="ttip stip"><b>${roomLabel(s,r)}${foe?' (ennemi)':''}</b><span>${what2}</span>
     ${dm?`<span class="bad">Endommagée : -${dm} barre${dm>1?'s':''}. ${foe?'':'Un marin dans la salle la répare.'}</span>`:''}${rm.fire>0?'<span class="bad">Incendie ! Un marin dans la salle l’éteint.</span>':''}
     <small>${here} marin${here>1?'s':''} à bord de la salle${boarders?`, ${boarders} abordeur${boarders>1?'s':''}`:''}${foe?'. Clique une arme puis la salle pour la viser.':''}</small></div>`;
@@ -3884,6 +3964,7 @@ function applyCmd(o){
   else if(o.c==='pw'){const y=me.sys[o.k];if(!y)return;if(o.d>0){if(used(me)<me.reactor&&y.alloc<y.max)y.alloc++;}else if(y.alloc>0)y.alloc--;}
   else if(o.c==='bd'){const party=byUid(o.u).filter(c=>c.loc===me).slice(0,4);if(party.length)boardParty(B,me,party,o.room);}
   else if(o.c==='rt'){recallParty(B,me);}
+  else if(o.c==='dt'){turnBack(B,me);}
   else if(o.c==='st'){for(const c of me.crew)if(c.alive&&c.owner===me)goTo(c,c.st);}
 }
 function moveUnits(list,tile,ship,mark){
@@ -4043,7 +4124,7 @@ async function hostResolve(r){
 /* ================= expédition : roguelike en solo ou en coop (1 à 3 capitaines) ================= */
 const COOP_MAX=3,ACT_COLS=7,COOP_AUG=[3,10,17];
 const ACTS=[
-  {n:'Mer d’Iroise',tint:'#163449',boss:{name:'Le Kraken',ship:'kraken',d:'Un monstre des abysses. Ses tentacules frappent toute la flotte, l’étreinte broie une salle, l’encre aveugle les canonniers. Vise l’œil, la poche d’encre et le cœur.',tip:'Ses tentacules frappent toute la flotte. Crevez-lui l’œil et la poche d’encre.'},
+  {n:'Mer d’Iroise',tint:'#163449',boss:{name:'Le Kraken',ship:'kraken',d:'Un monstre des abysses. Son Cœur le régénère, sa Carapace se reforme, ses Bras frappent toute la flotte et son Œil s’ouvre par moments. Chaque organe crevé coupe un pouvoir.',tip:'Crevez son Cœur pour stopper sa régénération, et visez l’Œil quand il s’ouvre.'},
     foes:[['Marchand armé','caravelle'],['Corsaire du Ponant','fregate'],['Garde-côtes','galion']],seas:[null,null,null,'vent','calme']},
   {n:'Archipel des Brumes',tint:'#22293f',boss:{name:'La Veuve des Brumes',ship:'veuve',d:'Un navire fantôme. Il se dissout dans la brume spectrale et jette ses abordeurs sur un navire après l’autre.',tip:'Brume spectrale et abordages fantômes : gardez des défenseurs à bord.'},
     foes:[['Pirates des Brumes','requin'],['Boucaniers','fregate'],['Naufrageurs','caravelle']],seas:['brume','brume','nuit',null]},
@@ -4167,8 +4248,8 @@ function coopEnemy(k,t,n,dif){
   if(t==='elite'){const ship=rnd(['requin','fregate','galion']);
     return cBoard(r+CT.er,{name:['Chasseur de primes','Capitaine Mordrac','La Main Noire'][a],ship,extra:1+sc.crew,items:2+a+m,addW:sc.addW,boost:sc.boost,hull:hp(r+CT.er)*CT.eh*sc.hm});}
   const B=A.boss;
-  const spec=[{items:0,w:3,hull:2.7,monster:true},{extra:2,items:5,w:4,hull:1.6},{extra:2,items:8,w:4,hull:1.9}][a];
-  return cBoard(r+CT.br,{name:B.name,ship:B.ship,monster:spec.monster,extra:(spec.extra||0)+sc.crew,items:spec.items+2*m,w:spec.w,addW:spec.monster?m:0,boost:{charge:1+.7*m},hull:hp(r+CT.br)*spec.hull*CT.bh*(1+1.05*m)});
+  const spec=[{items:0,w:3,hull:2.5,monster:true},{extra:2,items:5,w:4,hull:1.6},{extra:2,items:8,w:4,hull:1.9}][a];
+  return cBoard(r+CT.br,{name:B.name,ship:B.ship,monster:spec.monster,extra:(spec.extra||0)+sc.crew,items:spec.items+2*m,w:spec.w,addW:spec.monster?m:0,boost:{charge:1+.7*m},hull:hp(r+CT.br)*spec.hull*CT.bh*(1+1.2*m)});
 }
 
 /* ----- hôte : l'état vit dans la base, donc un autre joueur peut reprendre ----- */
@@ -4354,7 +4435,7 @@ function coopBattle(M){
   SR=seeded(((M.seed||1)*7919+(M.step||0)*104729+31)>>>0);
   const ships=fl.map((p,j)=>{const b=remapBoard(bds[p],1000*(j+1)),s=makeShip(b,0);s.pid=p;s.name=bds[p].name||'Capitaine';s.color=bds[p].color||'#e8d7a6';s.manual=true;
     s.hull=Math.max(1,Math.min(s.hullMax,s.hullMax-(bds[p].avarie||0)));return s;});
-  const E=makeShip(remapBoard(en,9000),1);E.pickT=enemyPick;
+  const E=makeShip(remapBoard(en,9000),1);E.pickT=enemyPick;E.side='E';ships.forEach(s=>s.side='F');
   const me=ships[myIdx],allies=ships.filter(s=>s!==me);allies.forEach((s,j)=>s.gi=2+j);me.gi=0;
   const boss=M.node==='boss';
   B={pace:combatPace(M.step||1),A:me,Bs:E,fleet:ships,allies,order:[...ships,E],t:0,proj:[],ft:[],parts:[],ropes:[],over:false,winA:null,visual:true,aiT:0,speed:OPT.speed||1,doneT:0,fightT:0};
@@ -4798,7 +4879,7 @@ function renderScreen(){
       ['Recrute','Achète des marins à la taverne. Trois identiques fusionnent en version étoilée.'],
       ['Poste ton équipage','Clique un marin puis une case du navire. Son rôle double son bonus à son poste favori.'],
       ['Arme ton navire','Dans l’onglet Artillerie, sous le navire, équipe tes pièces et choisis la salle ennemie visée. Les nouvelles pièces viennent du butin et des escales.'],
-      ['Commande en combat','Clique un marin puis une salle, ou glisse-le. Espace met le combat en pause tactique.'],
+      ['Commande en combat','Clique un marin puis une salle, ou glisse-le. Trace un cadre pour en sélectionner plusieurs. Espace : pause tactique.'],
       ['Répare','Une salle touchée perd des barres. Seul un marin présent dans la salle la répare.'],
       ['Salles et couloirs','Cales, cambuse et coursives ne servent à rien, mais rallongent les trajets.'],
       ['Badges des salles','Marteau : avarie. Éclair barré : système à l\u2019arrêt. Flamme : incendie. Sabres : abordeurs.'],
